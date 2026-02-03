@@ -106,8 +106,11 @@ const navLinks = [
 
             // ============================================
             // DARK RED BLOOD HORROR ENGINE
-            // Motion-powered animations
+            // Performance-optimized horror system
             // ============================================
+
+            // Performance mode detection
+            type PerformanceMode = 'high' | 'medium' | 'low';
 
             class BloodHorrorEngine {
                 // Audio System Properties
@@ -127,8 +130,38 @@ const navLinks = [
                 whispers: string[];
                 scareSymbols: string[];
 
-                // Accessibility
+                // Accessibility & Performance
                 prefersReducedMotion: boolean;
+                performanceMode: PerformanceMode;
+
+                // Cached DOM elements - avoid repeated queries
+                cachedElements: {
+                    bloodLayer: HTMLElement | null;
+                    bloodGlow: HTMLElement | null;
+                    fogLayer: HTMLElement | null;
+                    fogHaze: HTMLElement | null;
+                    vignette: HTMLElement | null;
+                    scanlines: Element | null;
+                    staticNoise: HTMLElement | null;
+                    jumpscareOverlay: HTMLElement | null;
+                    scareContent: HTMLElement | null;
+                    audioToggle: HTMLElement | null;
+                    main: HTMLElement | null;
+                    pageContent: HTMLElement | null;
+                    headerSymbol: Element | null;
+                    bigSymbol: Element | null;
+                    glitchTexts: Element[];
+                    paragraphs: Element[];
+                };
+
+                // Whisper element pool - reuse instead of create/destroy
+                whisperPool: HTMLElement[];
+                whisperPoolIndex: number;
+
+                // RAF loop management
+                rafId: number | null;
+                lastFrameTime: number;
+                tickCounter: number;
 
                 constructor() {
                     this.audioContext = null;
@@ -143,6 +176,38 @@ const navLinks = [
                     this.bgMusic = null;
                     this.musicStarted = false;
                     this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+                    // Detect device performance
+                    this.performanceMode = this.detectPerformance();
+
+                    // Initialize cached elements
+                    this.cachedElements = {
+                        bloodLayer: null,
+                        bloodGlow: null,
+                        fogLayer: null,
+                        fogHaze: null,
+                        vignette: null,
+                        scanlines: null,
+                        staticNoise: null,
+                        jumpscareOverlay: null,
+                        scareContent: null,
+                        audioToggle: null,
+                        main: null,
+                        pageContent: null,
+                        headerSymbol: null,
+                        bigSymbol: null,
+                        glitchTexts: [],
+                        paragraphs: []
+                    };
+
+                    // Whisper pool for element reuse
+                    this.whisperPool = [];
+                    this.whisperPoolIndex = 0;
+
+                    // RAF loop state
+                    this.rafId = null;
+                    this.lastFrameTime = 0;
+                    this.tickCounter = 0;
 
                     this.whispers = [
                         "The blood...",
@@ -174,23 +239,176 @@ const navLinks = [
                     this.init();
                 }
 
+                // ============================================
+                // PERFORMANCE DETECTION
+                // ============================================
+                detectPerformance(): PerformanceMode {
+                    // Check for low-end device indicators
+                    const hardwareConcurrency = navigator.hardwareConcurrency || 2;
+                    const deviceMemory = (navigator as any).deviceMemory || 4;
+                    const connection = (navigator as any).connection;
+                    const saveData = connection?.saveData || false;
+                    const effectiveType = connection?.effectiveType || '4g';
+
+                    // Low performance: limited cores, low memory, or data saver
+                    if (hardwareConcurrency <= 2 || deviceMemory <= 2 || saveData) {
+                        console.log('[Horror] Low performance mode - minimal effects');
+                        return 'low';
+                    }
+
+                    // Medium performance: moderate specs or slow connection
+                    if (hardwareConcurrency <= 4 || deviceMemory <= 4 || effectiveType === '3g' || effectiveType === '2g') {
+                        console.log('[Horror] Medium performance mode - reduced effects');
+                        return 'medium';
+                    }
+
+                    console.log('[Horror] High performance mode - full effects');
+                    return 'high';
+                }
+
+                // ============================================
+                // DOM CACHING
+                // ============================================
+                cacheElements() {
+                    this.cachedElements = {
+                        bloodLayer: document.getElementById('blood-layer'),
+                        bloodGlow: document.getElementById('blood-glow'),
+                        fogLayer: document.getElementById('fog-layer'),
+                        fogHaze: document.getElementById('fog-haze'),
+                        vignette: document.getElementById('vignette'),
+                        scanlines: document.querySelector('.scanlines'),
+                        staticNoise: document.getElementById('static-noise'),
+                        jumpscareOverlay: document.getElementById('jumpscare-overlay'),
+                        scareContent: document.getElementById('scare-content'),
+                        audioToggle: document.getElementById('audio-toggle'),
+                        main: document.querySelector('main'),
+                        pageContent: document.querySelector('.page-content') as HTMLElement | null,
+                        headerSymbol: document.querySelector('header .symbol'),
+                        bigSymbol: document.querySelector('.home-intro .big-symbol'),
+                        glitchTexts: Array.from(document.querySelectorAll('.glitch-text')),
+                        paragraphs: []  // Lazily cached when needed
+                    };
+                }
+
+                // Lazy cache paragraphs only when needed
+                getParagraphs(): Element[] {
+                    if (this.cachedElements.paragraphs.length === 0 && this.cachedElements.main) {
+                        this.cachedElements.paragraphs = Array.from(this.cachedElements.main.querySelectorAll('p'));
+                    }
+                    return this.cachedElements.paragraphs;
+                }
+
+                // ============================================
+                // WHISPER POOL
+                // ============================================
+                initWhisperPool() {
+                    const poolSize = this.performanceMode === 'low' ? 2 : 4;
+                    for (let i = 0; i < poolSize; i++) {
+                        const whisper = document.createElement('div');
+                        whisper.className = 'whisper';
+                        whisper.style.display = 'none';
+                        whisper.style.willChange = 'opacity, filter, transform';
+                        document.body.appendChild(whisper);
+                        this.whisperPool.push(whisper);
+                    }
+                }
+
+                getPooledWhisper(): HTMLElement {
+                    const whisper = this.whisperPool[this.whisperPoolIndex];
+                    this.whisperPoolIndex = (this.whisperPoolIndex + 1) % this.whisperPool.length;
+                    return whisper;
+                }
+
                 init() {
+                    // Cache all DOM elements first
+                    this.cacheElements();
+
                     this.setupBackgroundMusic();
                     this.setupAudioToggle();
 
                     if (!this.prefersReducedMotion) {
-                        this.setupMotionAnimations();
-                        this.setupGlitchEffects();
+                        // Initialize whisper pool for element reuse
+                        this.initWhisperPool();
+
+                        // Add will-change hints to animated elements
+                        this.addWillChangeHints();
+
+                        // Use CSS animations for backgrounds (much lighter than JS)
+                        this.enableCSSAnimations();
+
+                        // Only setup JS animations on high/medium performance
+                        if (this.performanceMode !== 'low') {
+                            this.setupGlitchEffects();
+                        }
+
+                        // Setup pooled whispers
                         this.setupWhispers();
                         this.setupJumpscares();
                         this.setupScrollEffects();
-                        this.setupIdleDetection();
-                        this.setupRandomEvents();
+
+                        // Start unified RAF loop instead of multiple timers
+                        this.startMainLoop();
+
                         this.setupInteractiveElements();
                         this.setupKeyboardEasterEggs();
                     }
 
                     this.setupPageLoad();
+                }
+
+                // ============================================
+                // WILL-CHANGE HINTS
+                // ============================================
+                addWillChangeHints() {
+                    const { bloodLayer, bloodGlow, vignette, staticNoise } = this.cachedElements;
+                    if (bloodLayer) bloodLayer.style.willChange = 'opacity';
+                    if (bloodGlow) bloodGlow.style.willChange = 'opacity';
+                    if (vignette) vignette.style.willChange = 'opacity';
+                    if (staticNoise) staticNoise.style.willChange = 'opacity';
+                }
+
+                // ============================================
+                // CSS ANIMATIONS (GPU-accelerated, no JS overhead)
+                // ============================================
+                enableCSSAnimations() {
+                    const { bloodLayer, bloodGlow, fogLayer, fogHaze, vignette, scanlines, staticNoise } = this.cachedElements;
+
+                    // Blood layer pulse - pure CSS
+                    if (bloodLayer) {
+                        bloodLayer.style.animation = 'bloodPulse 12s ease-in-out infinite';
+                    }
+
+                    // Blood glow flicker - pure CSS (skip on low performance)
+                    if (bloodGlow && this.performanceMode !== 'low') {
+                        bloodGlow.style.animation = 'bloodFlicker 0.8s ease-in-out infinite';
+                    }
+
+                    // Fog drift - pure CSS
+                    if (fogLayer) {
+                        fogLayer.style.animation = this.performanceMode === 'low'
+                            ? 'fogDrift 240s linear infinite'
+                            : 'fogDrift 180s linear infinite, fogFloat 40s ease-in-out infinite';
+                    }
+
+                    // Fog haze - pure CSS (skip on low performance)
+                    if (fogHaze && this.performanceMode !== 'low') {
+                        fogHaze.style.animation = 'hazeBreath 20s ease-in-out infinite';
+                    }
+
+                    // Vignette breathing - pure CSS
+                    if (vignette) {
+                        vignette.style.animation = 'vignetteBreath 8s ease-in-out infinite';
+                    }
+
+                    // Scanlines - pure CSS
+                    if (scanlines) {
+                        (scanlines as HTMLElement).style.animation = 'scanlineMove 15s linear infinite';
+                    }
+
+                    // Static noise - pure CSS (skip on low performance)
+                    if (staticNoise && this.performanceMode !== 'low') {
+                        staticNoise.style.animation = 'staticFlicker 0.15s steps(4) infinite';
+                    }
                 }
 
                 // ============================================
@@ -234,178 +452,20 @@ const navLinks = [
                 }
 
                 // ============================================
-                // MOTION ANIMATIONS
+                // MOTION ANIMATIONS (now CSS-based for performance)
                 // ============================================
-                setupMotionAnimations() {
-                    // Enhanced blood layer pulsing with more depth
-                    const bloodLayer = document.getElementById('blood-layer');
-                    if (bloodLayer) {
-                        animate(
-                            bloodLayer,
-                            {
-                                opacity: [1, 0.82, 0.95, 0.88, 1],
-                                filter: [
-                                    'brightness(1) contrast(1)',
-                                    'brightness(1.08) contrast(1.05)',
-                                    'brightness(0.95) contrast(1.02)',
-                                    'brightness(1.05) contrast(1.03)',
-                                    'brightness(1) contrast(1)'
-                                ]
-                            } as any,
-                            {
-                                duration: 12,
-                                repeat: Infinity,
-                                easing: 'ease-in-out'
-                            } as any
-                        );
-                    }
-
-                    // Enhanced blood glow flickering with irregular pattern
-                    const bloodGlow = document.getElementById('blood-glow');
-                    if (bloodGlow) {
-                        animate(
-                            bloodGlow,
-                            {
-                                opacity: [0.8, 0.55, 0.9, 0.65, 0.85, 0.7, 0.8],
-                                filter: [
-                                    'blur(0px)',
-                                    'blur(1px)',
-                                    'blur(0px)',
-                                    'blur(2px)',
-                                    'blur(0px)',
-                                    'blur(1px)',
-                                    'blur(0px)'
-                                ]
-                            } as any,
-                            {
-                                duration: 0.8,
-                                repeat: Infinity,
-                                easing: [0.45, 0.05, 0.55, 0.95]  // Custom easing for irregular flicker
-                            } as any
-                        );
-                    }
-
-                    // Enhanced fog drift with vertical movement
-                    const fogLayer = document.getElementById('fog-layer');
-                    if (fogLayer) {
-                        // Horizontal drift
-                        animate(
-                            fogLayer,
-                            {
-                                x: ['0%', '-66.666%']
-                            } as any,
-                            {
-                                duration: 180,  // Slower for more ominous effect
-                                repeat: Infinity,
-                                easing: 'linear'
-                            } as any
-                        );
-
-                        // Add subtle vertical oscillation
-                        animate(
-                            fogLayer,
-                            {
-                                y: ['0%', '-2%', '0%', '2%', '0%']
-                            } as any,
-                            {
-                                duration: 40,
-                                repeat: Infinity,
-                                easing: 'ease-in-out'
-                            } as any
-                        );
-                    }
-
-                    // Enhanced fog haze with opacity and blur variation
-                    const fogHaze = document.getElementById('fog-haze');
-                    if (fogHaze) {
-                        animate(
-                            fogHaze,
-                            {
-                                opacity: [0.5, 0.7, 0.4, 0.8, 0.5],
-                                filter: [
-                                    'blur(0px)',
-                                    'blur(3px)',
-                                    'blur(1px)',
-                                    'blur(4px)',
-                                    'blur(0px)'
-                                ]
-                            } as any,
-                            {
-                                duration: 20,
-                                repeat: Infinity,
-                                easing: 'ease-in-out'
-                            } as any
-                        );
-                    }
-
-                    // Enhanced vignette breathing with intensity variation
-                    const vignette = document.getElementById('vignette');
-                    if (vignette) {
-                        animate(
-                            vignette,
-                            {
-                                opacity: [1, 0.8, 0.95, 0.85, 1],
-                                filter: [
-                                    'brightness(1)',
-                                    'brightness(0.95)',
-                                    'brightness(1.02)',
-                                    'brightness(0.98)',
-                                    'brightness(1)'
-                                ]
-                            } as any,
-                            {
-                                duration: 8,
-                                repeat: Infinity,
-                                easing: 'ease-in-out'
-                            } as any
-                        );
-                    }
-
-                    // Scanlines movement - smoother, slower
-                    const scanlines = document.querySelector('.scanlines');
-                    if (scanlines) {
-                        animate(
-                            scanlines,
-                            { y: [0, 8] } as any,
-                            {
-                                duration: 15,  // Slower for less distraction
-                                repeat: Infinity,
-                                easing: 'linear'
-                            } as any
-                        );
-                    }
-
-                    // Enhanced static noise flicker - more varied
-                    const staticNoise = document.getElementById('static-noise');
-                    if (staticNoise) {
-                        animate(
-                            staticNoise,
-                            {
-                                opacity: [0.03, 0.08, 0.02, 0.06, 0.04, 0.03],
-                                filter: [
-                                    'contrast(1)',
-                                    'contrast(1.5)',
-                                    'contrast(1)',
-                                    'contrast(1.3)',
-                                    'contrast(1.1)',
-                                    'contrast(1)'
-                                ]
-                            } as any,
-                            {
-                                duration: 0.15,
-                                repeat: Infinity,
-                                easing: [0.4, 0, 0.6, 1]  // Sharp, irregular
-                            } as any
-                        );
-                    }
-                }
+                // Background animations moved to CSS keyframes for GPU acceleration
+                // See enableCSSAnimations() method and global.css
 
                 setupPageLoad() {
+                    // Re-cache elements on page load (for Astro navigation)
+                    this.cacheElements();
+
                     // Simple instant fade - "old web" feel
-                    const pageContent = document.querySelector('.page-content');
+                    const pageContent = this.cachedElements.pageContent;
                     if (pageContent) {
                         if (this.prefersReducedMotion) {
-                            (pageContent as HTMLElement).style.opacity = '1';
+                            pageContent.style.opacity = '1';
                         } else {
                             animate(
                                 pageContent,
@@ -418,50 +478,35 @@ const navLinks = [
                     // Only setup breathing effects if motion is allowed
                     if (this.prefersReducedMotion) return;
 
-                    // Symbol breathing effects (header)
-                    const headerSymbol = document.querySelector('header .symbol');
-                    if (headerSymbol) {
-                        animate(
-                            headerSymbol,
-                            {
-                                textShadow: [
-                                    '0 0 20px rgba(153, 0, 0, 0.4), 0 0 30px rgba(204, 0, 0, 0.5)',
-                                    '0 0 30px rgba(153, 0, 0, 0.6), 0 0 50px rgba(204, 0, 0, 0.7)',
-                                    '0 0 20px rgba(153, 0, 0, 0.4), 0 0 30px rgba(204, 0, 0, 0.5)'
-                                ]
-                            } as any,
-                            { duration: 4, repeat: Infinity, easing: 'ease-in-out' } as any
-                        );
+                    // Skip symbol breathing on low performance
+                    if (this.performanceMode !== 'low') {
+                        // Symbol breathing effects (header) - using CSS animation instead
+                        const headerSymbol = this.cachedElements.headerSymbol;
+                        if (headerSymbol) {
+                            (headerSymbol as HTMLElement).style.animation = 'symbolBreath 4s ease-in-out infinite';
+                        }
+
+                        // Home symbol breathing
+                        const bigSymbol = this.cachedElements.bigSymbol;
+                        if (bigSymbol) {
+                            (bigSymbol as HTMLElement).style.animation = 'symbolBreath 4s ease-in-out infinite';
+                        }
                     }
 
-                    // Home symbol breathing
-                    const bigSymbol = document.querySelector('.home-intro .big-symbol');
-                    if (bigSymbol) {
-                        animate(
-                            bigSymbol,
-                            {
-                                textShadow: [
-                                    '0 0 30px rgba(153, 0, 0, 0.6), 0 0 60px rgba(204, 0, 0, 0.5)',
-                                    '0 0 40px rgba(153, 0, 0, 0.8), 0 0 80px rgba(204, 0, 0, 0.7)',
-                                    '0 0 30px rgba(153, 0, 0, 0.6), 0 0 60px rgba(204, 0, 0, 0.5)'
-                                ]
-                            } as any,
-                            { duration: 4, repeat: Infinity, easing: 'ease-in-out' } as any
-                        );
-                    }
-
-                    // Parallax scroll for blood layer (now works with absolute positioning)
-                    const bloodLayerEl = document.getElementById('blood-layer');
-                    if (bloodLayerEl) {
-                        scroll(
-                            animate(bloodLayerEl, {
-                                y: [0, -50]  // Reduced range for subtler effect with absolute positioning
-                            } as any) as any,
-                            {
-                                target: document.body,
-                                offset: ['start start', 'end end']  // Animate across full scroll range
-                            } as any
-                        );
+                    // Skip parallax on low performance
+                    if (this.performanceMode === 'high') {
+                        const bloodLayerEl = this.cachedElements.bloodLayer;
+                        if (bloodLayerEl) {
+                            scroll(
+                                animate(bloodLayerEl, {
+                                    y: [0, -50]
+                                } as any) as any,
+                                {
+                                    target: document.body,
+                                    offset: ['start start', 'end end']
+                                } as any
+                            );
+                        }
                     }
                 }
 
@@ -657,38 +702,15 @@ const navLinks = [
                 }
 
                 // ============================================
-                // GLITCH EFFECTS
+                // GLITCH EFFECTS (now handled by main loop)
                 // ============================================
                 setupGlitchEffects() {
-                    const triggerGlitch = () => {
-                        const elements = document.querySelectorAll('.glitch-text');
-                        if (elements.length === 0) return;
-
-                        const el = elements[Math.floor(Math.random() * elements.length)];
-
-                        animate(
-                            el,
-                            {
-                                x: [-2, 2, -2, 0],
-                                y: [1, -1, 1, 0],
-                                textShadow: [
-                                    'inherit',
-                                    '-3px 0 #cc0000, 3px 0 #990000',
-                                    '3px 0 #cc0000, -3px 0 #990000',
-                                    'inherit'
-                                ]
-                            } as any,
-                            { duration: 0.3, easing: 'ease-out' } as any
-                        );
-
-                        setTimeout(triggerGlitch, 3000 + Math.random() * 9000);
-                    };
-
-                    setTimeout(triggerGlitch, 3000);
+                    // Glitch effects are now scheduled by startMainLoop
+                    // using cached elements for better performance
                 }
 
                 triggerStaticBurst() {
-                    const staticEl = document.getElementById('static-noise');
+                    const staticEl = this.cachedElements.staticNoise;
                     if (!staticEl) return;
 
                     staticEl.classList.add('active');
@@ -703,60 +725,50 @@ const navLinks = [
                 triggerHeavyGlitch() {
                     const body = document.body;
 
-                    animate(
-                        body,
-                        {
-                            x: [-5, 5, -3, 3, 0],
-                            skewX: [-2, 2, 0],
-                            filter: [
-                                'none',
-                                'hue-rotate(90deg)',
-                                'saturate(2) contrast(1.5)',
-                                'invert(1)',
-                                'none'
-                            ]
-                        } as any,
-                        { duration: 0.4, easing: 'ease-out' } as any
-                    );
-
-                    this.triggerStaticBurst();
+                    // Simplified for performance - transform only on low/medium
+                    if (this.performanceMode === 'low') {
+                        animate(
+                            body,
+                            { x: [-3, 3, -2, 2, 0] } as any,
+                            { duration: 0.4, easing: 'ease-out' } as any
+                        );
+                    } else if (this.performanceMode === 'medium') {
+                        animate(
+                            body,
+                            {
+                                x: [-5, 5, -3, 3, 0],
+                                skewX: [-1, 1, 0]
+                            } as any,
+                            { duration: 0.4, easing: 'ease-out' } as any
+                        );
+                        this.triggerStaticBurst();
+                    } else {
+                        animate(
+                            body,
+                            {
+                                x: [-5, 5, -3, 3, 0],
+                                skewX: [-2, 2, 0],
+                                filter: [
+                                    'none',
+                                    'hue-rotate(90deg)',
+                                    'saturate(2) contrast(1.5)',
+                                    'invert(1)',
+                                    'none'
+                                ]
+                            } as any,
+                            { duration: 0.4, easing: 'ease-out' } as any
+                        );
+                        this.triggerStaticBurst();
+                    }
                 }
 
                 // ============================================
-                // WHISPERS
+                // WHISPERS (now handled by main loop with pooled elements)
                 // ============================================
                 setupWhispers() {
-                    const showWhisper = () => {
-                        if (this.whisperCount >= this.maxWhispers) {
-                            this.whisperCount = 0;
-                        }
-
-                        const text = this.whispers[Math.floor(Math.random() * this.whispers.length)];
-                        const whisper = document.createElement('div');
-                        whisper.className = 'whisper';
-                        whisper.textContent = text;
-                        whisper.style.left = (10 + Math.random() * 70) + '%';
-                        whisper.style.top = (10 + Math.random() * 70) + '%';
-                        whisper.style.transform = `rotate(${(Math.random() - 0.5) * 20}deg)`;
-
-                        document.body.appendChild(whisper);
-                        this.playWhisperSound();
-                        this.whisperCount++;
-
-                        animate(
-                            whisper,
-                            {
-                                opacity: [0, 0.4, 0.3, 0],
-                                filter: ['blur(10px)', 'blur(2px)', 'blur(2px)', 'blur(10px)']
-                            } as any,
-                            { duration: 4, easing: 'ease-out' } as any
-                        );
-
-                        setTimeout(() => whisper.remove(), 4000);
-                        setTimeout(showWhisper, 15000 + Math.random() * 25000);
-                    };
-
-                    setTimeout(showWhisper, 15000 + Math.random() * 20000);
+                    // Whispers are now scheduled by startMainLoop using pooled elements
+                    // This method is kept for compatibility but the actual scheduling
+                    // happens in the unified main loop for better performance
                 }
 
                 // ============================================
@@ -799,8 +811,8 @@ const navLinks = [
                 }
 
                 triggerFullJumpscare() {
-                    const overlay = document.getElementById('jumpscare-overlay');
-                    const content = document.getElementById('scare-content');
+                    const overlay = this.cachedElements.jumpscareOverlay;
+                    const content = this.cachedElements.scareContent;
                     if (!overlay || !content) return;
 
                     content.innerHTML = this.scareSymbols[Math.floor(Math.random() * this.scareSymbols.length)];
@@ -808,21 +820,21 @@ const navLinks = [
                     this.playJumpscareSound();
                     this.triggerStaticBurst();
 
+                    // Simplified shake animation
                     animate(
                         content,
                         {
-                            x: [-10, 10, -5, 5, 0],
-                            y: [5, -5, -10, 5, 0],
+                            x: [-8, 8, -4, 4, 0],
+                            y: [4, -4, -8, 4, 0],
                             rotate: [-2, 2, -1, 1, 0]
                         } as any,
                         { duration: 0.2, repeat: 2 } as any
                     );
 
+                    // Background flash
                     animate(
                         overlay,
-                        {
-                            background: ['#ffffff', '#cc0000', '#000000']
-                        } as any,
+                        { background: ['#ffffff', '#cc0000', '#000000'] } as any,
                         { duration: 0.4, easing: 'ease-out' } as any
                     );
 
@@ -869,24 +881,10 @@ const navLinks = [
                 }
 
                 // ============================================
-                // IDLE DETECTION
+                // UNIFIED MAIN LOOP (replaces multiple timers)
                 // ============================================
-                setupIdleDetection() {
-                    setInterval(() => {
-                        const idleTime = Date.now() - this.lastInteraction;
-
-                        if (idleTime > 30000 && Math.random() < 0.15) {
-                            this.showIdleWhisper();
-                        }
-
-                        if (idleTime > 60000 && Math.random() < 0.08 && !this.jumpscareTriggered) {
-                            this.triggerFullJumpscare();
-                            this.jumpscareTriggered = true;
-                            setTimeout(() => { this.jumpscareTriggered = false; }, 30000);
-                        }
-                    }, 5000);
-
-                    // Throttled interaction tracking for better performance
+                startMainLoop() {
+                    // Throttled interaction tracking
                     let interactionTimeout: number | null = null;
                     const updateInteraction = () => {
                         if (interactionTimeout) return;
@@ -899,68 +897,214 @@ const navLinks = [
                     ['mousemove', 'keydown', 'scroll', 'click'].forEach(event => {
                         document.addEventListener(event, updateInteraction, { passive: true });
                     });
+
+                    // Performance-adjusted intervals (in seconds)
+                    const intervals = this.performanceMode === 'low'
+                        ? { tick: 8000, whisper: 40000, glitch: 15000 }
+                        : this.performanceMode === 'medium'
+                        ? { tick: 6000, whisper: 25000, glitch: 8000 }
+                        : { tick: 4000, whisper: 15000, glitch: 5000 };
+
+                    // Schedule whispers with requestIdleCallback when available
+                    const scheduleWhisper = () => {
+                        const delay = intervals.whisper + Math.random() * intervals.whisper;
+                        setTimeout(() => {
+                            if ('requestIdleCallback' in window) {
+                                requestIdleCallback(() => this.showPooledWhisper(), { timeout: 5000 });
+                            } else {
+                                this.showPooledWhisper();
+                            }
+                            scheduleWhisper();
+                        }, delay);
+                    };
+                    scheduleWhisper();
+
+                    // Schedule glitch effects
+                    if (this.performanceMode !== 'low') {
+                        const scheduleGlitch = () => {
+                            const delay = intervals.glitch + Math.random() * intervals.glitch * 2;
+                            setTimeout(() => {
+                                this.triggerGlitchEffect();
+                                scheduleGlitch();
+                            }, delay);
+                        };
+                        setTimeout(scheduleGlitch, intervals.glitch);
+                    }
+
+                    // Main tick loop - consolidated random events
+                    this.tickCounter = 0;
+                    setInterval(() => {
+                        this.tickCounter++;
+                        this.mainLoopTick();
+                    }, intervals.tick);
                 }
 
-                showIdleWhisper() {
-                    const text = this.whispers[Math.floor(Math.random() * this.whispers.length)];
-                    const whisper = document.createElement('div');
-                    whisper.className = 'whisper';
-                    whisper.textContent = text;
-                    whisper.style.left = (20 + Math.random() * 60) + '%';
-                    whisper.style.top = (20 + Math.random() * 60) + '%';
+                mainLoopTick() {
+                    const tick = this.tickCounter;
+                    const idleTime = Date.now() - this.lastInteraction;
+                    const mode = this.performanceMode;
 
-                    document.body.appendChild(whisper);
-                    this.playWhisperSound();
+                    // Idle detection (every 2 ticks ~ 8-16s)
+                    if (tick % 2 === 0) {
+                        // Idle whisper
+                        if (idleTime > 30000) {
+                            const prob = mode === 'low' ? 0.05 : mode === 'medium' ? 0.1 : 0.15;
+                            if (Math.random() < prob) {
+                                this.showPooledWhisper();
+                            }
+                        }
+
+                        // Idle jumpscare
+                        if (idleTime > 60000 && !this.jumpscareTriggered) {
+                            const prob = mode === 'low' ? 0.02 : mode === 'medium' ? 0.05 : 0.08;
+                            if (Math.random() < prob) {
+                                this.triggerFullJumpscare();
+                                this.jumpscareTriggered = true;
+                                setTimeout(() => { this.jumpscareTriggered = false; }, 30000);
+                            }
+                        }
+                    }
+
+                    // Screen flicker (every 2 ticks) - skip on low
+                    if (mode !== 'low' && tick % 2 === 0 && Math.random() < 0.08) {
+                        this.screenFlicker();
+                    }
+
+                    // Text distortion (every 3 ticks) - use requestIdleCallback
+                    if (tick % 3 === 0 && Math.random() < (mode === 'low' ? 0.04 : 0.12)) {
+                        if ('requestIdleCallback' in window) {
+                            requestIdleCallback(() => this.distortRandomText(), { timeout: 2000 });
+                        } else {
+                            this.distortRandomText();
+                        }
+                    }
+
+                    // Skip these on low performance
+                    if (mode === 'low') {
+                        if (tick >= 100) this.tickCounter = 0;
+                        return;
+                    }
+
+                    // Screen invert (every 5 ticks)
+                    if (tick % 5 === 0 && Math.random() < 0.04) {
+                        this.triggerScreenInvert();
+                    }
+
+                    // Split screen (every 6 ticks)
+                    if (mode === 'high' && tick % 6 === 0 && Math.random() < 0.06) {
+                        this.triggerSplitScreen();
+                    }
+
+                    // Vignette close (every 7 ticks)
+                    if (tick % 7 === 0 && Math.random() < 0.05) {
+                        this.triggerVignetteClose();
+                    }
+
+                    // Blood rain (every 10 ticks) - high performance only
+                    if (mode === 'high' && tick % 10 === 0 && Math.random() < 0.03) {
+                        this.triggerBloodRain();
+                    }
+
+                    // Reset counter to prevent overflow
+                    if (tick >= 420) this.tickCounter = 0;
+                }
+
+                triggerGlitchEffect() {
+                    const elements = this.cachedElements.glitchTexts;
+                    if (elements.length === 0) return;
+
+                    const el = elements[Math.floor(Math.random() * elements.length)];
 
                     animate(
-                        whisper,
+                        el,
                         {
-                            opacity: [0, 0.4, 0],
-                            filter: ['blur(10px)', 'blur(2px)', 'blur(10px)']
+                            x: [-2, 2, -2, 0],
+                            y: [1, -1, 1, 0],
+                            textShadow: [
+                                'inherit',
+                                '-3px 0 #cc0000, 3px 0 #990000',
+                                '3px 0 #cc0000, -3px 0 #990000',
+                                'inherit'
+                            ]
                         } as any,
+                        { duration: 0.3, easing: 'ease-out' } as any
+                    );
+                }
+
+                // Pooled whisper system - reuses DOM elements
+                showPooledWhisper() {
+                    if (this.whisperPool.length === 0) return;
+
+                    const text = this.whispers[Math.floor(Math.random() * this.whispers.length)];
+                    const whisper = this.getPooledWhisper();
+
+                    whisper.textContent = text;
+                    whisper.style.left = (10 + Math.random() * 70) + '%';
+                    whisper.style.top = (10 + Math.random() * 70) + '%';
+                    whisper.style.transform = `rotate(${(Math.random() - 0.5) * 20}deg)`;
+                    whisper.style.display = 'block';
+
+                    this.playWhisperSound();
+                    this.whisperCount++;
+
+                    // Use simpler animation for better performance
+                    animate(
+                        whisper,
+                        { opacity: [0, 0.4, 0.3, 0] } as any,
                         { duration: 4, easing: 'ease-out' } as any
                     );
 
-                    setTimeout(() => whisper.remove(), 4000);
+                    setTimeout(() => {
+                        whisper.style.display = 'none';
+                        this.whisperCount = Math.max(0, this.whisperCount - 1);
+                    }, 4000);
+                }
+
+                showIdleWhisper() {
+                    // Delegate to pooled version
+                    this.showPooledWhisper();
                 }
 
                 // ============================================
                 // INTERACTIVE ELEMENTS
                 // ============================================
                 setupInteractiveElements() {
-                    // Use event delegation for better performance
-                    const main = document.querySelector('main');
+                    const main = this.cachedElements.main;
                     if (!main) return;
 
-                    // Single mouseover event listener using event delegation
+                    // Reduced probabilities on low performance
+                    const probs = this.performanceMode === 'low'
+                        ? { text: 0.02, card: 0.05, header: 0.1 }
+                        : this.performanceMode === 'medium'
+                        ? { text: 0.05, card: 0.1, header: 0.2 }
+                        : { text: 0.08, card: 0.15, header: 0.25 };
+
+                    // Event delegation with throttling
+                    let hoverThrottle = false;
                     main.addEventListener('mouseover', (e) => {
+                        if (hoverThrottle) return;
+                        hoverThrottle = true;
+                        setTimeout(() => { hoverThrottle = false; }, 200);
+
                         const target = e.target as HTMLElement;
 
-                        // Check if target is a paragraph or list item
-                        if (target.matches('p, li')) {
-                            if (Math.random() < 0.08) {
-                                this.triggerTextCorruption(target);
-                            }
+                        if (target.matches('p, li') && Math.random() < probs.text) {
+                            this.triggerTextCorruption(target);
                         }
 
-                        // Check if target is an article card
                         if (target.matches('.article-card') || target.closest('.article-card')) {
                             const card = target.matches('.article-card') ? target : target.closest('.article-card') as HTMLElement;
-                            if (card && Math.random() < 0.15) {
+                            if (card && Math.random() < probs.card) {
                                 this.triggerCardGlitch(card);
                             }
                         }
                     }, { passive: true });
 
-                    // Single click event listener using event delegation
+                    // Click handler with reduced frequency
                     main.addEventListener('click', (e) => {
                         const target = e.target as HTMLElement;
-
-                        // Check if target is a header
-                        if (target.matches('h2, h3')) {
-                            if (Math.random() < 0.25) {
-                                this.triggerHeaderDistortion(target);
-                            }
+                        if (target.matches('h2, h3') && Math.random() < probs.header) {
+                            this.triggerHeaderDistortion(target);
                         }
                     }, { passive: true });
                 }
@@ -993,45 +1137,53 @@ const navLinks = [
                 }
 
                 triggerCardGlitch(card: HTMLElement) {
-                    animate(
-                        card,
-                        {
-                            x: [-3, 3, -2, 2, 0],
-                            y: [2, -2, 1, -1, 0],
-                            rotate: [-1, 1, -0.5, 0.5, 0],
-                            filter: [
-                                'brightness(1)',
-                                'brightness(0.7) saturate(2)',
-                                'brightness(1.3) hue-rotate(15deg)',
-                                'brightness(0.9)',
-                                'brightness(1)'
-                            ]
-                        } as any,
-                        { duration: 0.4, easing: 'ease-out' } as any
-                    );
-
-                    this.playGlitchSound();
+                    // Simplified - transform only for GPU acceleration
+                    if (this.performanceMode === 'low') {
+                        animate(
+                            card,
+                            { x: [-2, 2, 0] } as any,
+                            { duration: 0.3, easing: 'ease-out' } as any
+                        );
+                    } else {
+                        animate(
+                            card,
+                            {
+                                x: [-3, 3, -2, 2, 0],
+                                y: [2, -2, 1, -1, 0],
+                                rotate: [-1, 1, -0.5, 0.5, 0],
+                                opacity: [1, 0.8, 1, 0.9, 1]
+                            } as any,
+                            { duration: 0.4, easing: 'ease-out' } as any
+                        );
+                        this.playGlitchSound();
+                    }
                 }
 
                 triggerHeaderDistortion(header: HTMLElement) {
-                    animate(
-                        header,
-                        {
-                            scaleX: [1, 0.98, 1.03, 0.99, 1],
-                            scaleY: [1, 1.02, 0.97, 1.01, 1],
-                            x: [-5, 5, -3, 3, 0],
-                            textShadow: [
-                                'inherit',
-                                '5px 0 #cc0000, -5px 0 #990000',
-                                '0 5px #cc0000, 0 -5px #990000',
-                                '3px 3px #cc0000, -3px -3px #990000',
-                                'inherit'
-                            ]
-                        } as any,
-                        { duration: 0.5, easing: [0.4, 0, 0.2, 1] } as any
-                    );
-
-                    this.triggerStaticBurst();
+                    // Simplified - transform + text-shadow only
+                    if (this.performanceMode === 'low') {
+                        animate(
+                            header,
+                            { x: [-3, 3, -2, 2, 0] } as any,
+                            { duration: 0.4, easing: 'ease-out' } as any
+                        );
+                    } else {
+                        animate(
+                            header,
+                            {
+                                x: [-4, 4, -2, 2, 0],
+                                scale: [1, 1.01, 0.99, 1],
+                                textShadow: [
+                                    'inherit',
+                                    '4px 0 #cc0000, -4px 0 #990000',
+                                    '0 4px #cc0000, 0 -4px #990000',
+                                    'inherit'
+                                ]
+                            } as any,
+                            { duration: 0.5, easing: [0.4, 0, 0.2, 1] } as any
+                        );
+                        this.triggerStaticBurst();
+                    }
                 }
 
                 // ============================================
@@ -1098,92 +1250,50 @@ const navLinks = [
                 }
 
                 // ============================================
-                // RANDOM EVENTS
+                // RANDOM EVENTS (now handled by mainLoopTick)
                 // ============================================
-                setupRandomEvents() {
-                    // Consolidated timer for better performance - runs every 4 seconds
-                    let ticks = 0;
+                // All random events consolidated into startMainLoop/mainLoopTick
+                // for better performance with adaptive timing
 
-                    setInterval(() => {
-                        ticks++;
-
-                        // Screen flicker - every 2 ticks (8s)
-                        if (ticks % 2 === 0 && Math.random() < 0.08) {
-                            this.screenFlicker();
-                        }
-
-                        // Text distortion - every 3 ticks (12s)
-                        if (ticks % 3 === 0 && Math.random() < 0.12) {
-                            this.distortRandomText();
-                        }
-
-                        // Screen invert - every 5 ticks (20s)
-                        if (ticks % 5 === 0 && Math.random() < 0.04) {
-                            this.triggerScreenInvert();
-                        }
-
-                        // Split screen - every 6 ticks (24s, close to 25s)
-                        if (ticks % 6 === 0 && Math.random() < 0.06) {
-                            this.triggerSplitScreen();
-                        }
-
-                        // Vignette close - every 7 ticks (28s, close to 30s)
-                        if (ticks % 7 === 0 && Math.random() < 0.05) {
-                            this.triggerVignetteClose();
-                        }
-
-                        // Blood rain - every 10 ticks (40s)
-                        if (ticks % 10 === 0 && Math.random() < 0.03) {
-                            this.triggerBloodRain();
-                        }
-
-                        // Reset ticks counter after LCM to prevent overflow (420 = LCM of 2,3,5,6,7,10)
-                        if (ticks >= 420) ticks = 0;
-                    }, 4000);
-                }
-
+                // GPU-accelerated visual effects - avoid expensive filters
                 screenFlicker() {
                     const body = document.body;
 
+                    // Use opacity instead of brightness filter (much cheaper)
                     animate(
                         body,
-                        { filter: ['brightness(1)', 'brightness(0.3)', 'brightness(1.5)', 'brightness(0.5)', 'brightness(1)'] } as any,
+                        { opacity: [1, 0.3, 1, 0.5, 1] } as any,
                         { duration: 0.13, easing: 'steps(4)' } as any
                     );
                 }
 
                 triggerScreenInvert() {
+                    // Skip on low performance - invert is expensive
+                    if (this.performanceMode === 'low') return;
+
                     const body = document.body;
 
                     animate(
                         body,
                         {
-                            filter: [
-                                'invert(0)',
-                                'invert(1)',
-                                'invert(1)',
-                                'invert(0)'
-                            ]
+                            filter: ['invert(0)', 'invert(1)', 'invert(1)', 'invert(0)']
                         } as any,
                         { duration: 0.3, easing: 'steps(3)' } as any
                     );
                 }
 
                 triggerSplitScreen() {
+                    // Skip on low/medium - multiple filters are expensive
+                    if (this.performanceMode !== 'high') return;
+
                     const body = document.body;
 
+                    // Simplified - transform only with one filter
                     animate(
                         body,
                         {
-                            x: [0, -20, 20, -10, 10, 0],
-                            filter: [
-                                'none',
-                                'hue-rotate(180deg)',
-                                'saturate(3)',
-                                'contrast(2)',
-                                'brightness(0.5)',
-                                'none'
-                            ]
+                            x: [0, -15, 15, -8, 8, 0],
+                            opacity: [1, 0.8, 0.9, 0.85, 0.95, 1]
                         } as any,
                         { duration: 0.5, easing: 'ease-out' } as any
                     );
@@ -1192,56 +1302,49 @@ const navLinks = [
                 }
 
                 triggerVignetteClose() {
-                    const vignette = document.getElementById('vignette');
+                    const vignette = this.cachedElements.vignette;
                     if (!vignette) return;
 
+                    // Use opacity only (GPU accelerated)
                     animate(
                         vignette,
-                        {
-                            opacity: [1, 1.5, 1.3, 1],
-                            filter: [
-                                'brightness(1)',
-                                'brightness(0.3)',
-                                'brightness(0.5)',
-                                'brightness(1)'
-                            ]
-                        } as any,
+                        { opacity: [1, 1.5, 1.3, 1] } as any,
                         { duration: 2, easing: 'ease-in-out' } as any
                     );
                 }
 
                 triggerBloodRain() {
-                    const bloodGlow = document.getElementById('blood-glow');
+                    // Skip on low/medium - complex effect
+                    if (this.performanceMode !== 'high') return;
+
+                    const bloodGlow = this.cachedElements.bloodGlow;
                     if (!bloodGlow) return;
 
+                    // Simplified - transform + opacity only
                     animate(
                         bloodGlow,
                         {
-                            opacity: [0.8, 1.2, 0.9, 1.1, 0.8],
-                            y: [0, -20, -10, -15, 0],
-                            filter: [
-                                'brightness(1) blur(0px)',
-                                'brightness(2) blur(5px)',
-                                'brightness(1.5) blur(2px)',
-                                'brightness(1.8) blur(3px)',
-                                'brightness(1) blur(0px)'
-                            ]
+                            opacity: [0.8, 1, 0.9, 1, 0.8],
+                            y: [0, -15, -8, -12, 0]
                         } as any,
                         { duration: 3, easing: 'ease-in-out' } as any
                     );
                 }
 
                 distortRandomText() {
-                    const paragraphs = document.querySelectorAll('main p');
+                    // Use cached paragraphs for better performance
+                    const paragraphs = this.getParagraphs();
                     if (paragraphs.length === 0) return;
 
                     const p = paragraphs[Math.floor(Math.random() * paragraphs.length)];
 
-                    // Choose random effect type
-                    const effectType = Math.floor(Math.random() * 4);
+                    // Simplified effects - prefer transform-only for GPU acceleration
+                    const effectType = this.performanceMode === 'low'
+                        ? 0  // Color only on low performance
+                        : Math.floor(Math.random() * 4);
 
                     switch(effectType) {
-                        case 0: // Color shift
+                        case 0: // Color shift (cheapest - no repaints)
                             animate(
                                 p,
                                 {
@@ -1252,40 +1355,40 @@ const navLinks = [
                             );
                             break;
 
-                        case 1: // Rotation + skew
+                        case 1: // Transform only (GPU accelerated)
                             animate(
                                 p,
                                 {
-                                    rotate: [0, 2, -2, 1, 0],
-                                    skewX: [0, -3, 3, 0],
+                                    x: [-2, 2, -1, 1, 0],
+                                    rotate: [0, 1, -1, 0.5, 0],
                                     textShadow: ['none', '2px 2px 8px rgba(153, 0, 0, 0.8)', 'none']
                                 } as any,
                                 { duration: 1.5, easing: 'ease-in-out' } as any
                             );
                             break;
 
-                        case 2: // Scale + blur
+                        case 2: // Scale (GPU accelerated, no blur)
                             animate(
                                 p,
                                 {
-                                    scale: [1, 1.03, 0.97, 1],
-                                    filter: ['blur(0px)', 'blur(2px)', 'blur(1px)', 'blur(0px)'],
+                                    scale: [1, 1.02, 0.98, 1],
+                                    opacity: [1, 0.8, 0.9, 1],
                                     color: ['inherit', '#cc0000', '#990000', 'inherit']
                                 } as any,
                                 { duration: 1.8, easing: 'ease-in-out' } as any
                             );
                             break;
 
-                        case 3: // Letter spacing glitch
+                        case 3: // Text shadow glitch (no filter)
                             animate(
                                 p,
                                 {
-                                    letterSpacing: ['normal', '0.3em', '-0.05em', '0.1em', 'normal'],
+                                    x: [-1, 1, 0],
                                     color: ['inherit', '#ff0000', '#990000', 'inherit'],
                                     textShadow: [
                                         'none',
                                         '3px 0 #cc0000, -3px 0 #990000',
-                                        '0 3px #cc0000, 0 -3px #990000',
+                                        '0 2px #cc0000, 0 -2px #990000',
                                         'none'
                                     ]
                                 } as any,
@@ -1294,7 +1397,7 @@ const navLinks = [
                             break;
                     }
 
-                    if (Math.random() < 0.3) {
+                    if (Math.random() < 0.3 && this.performanceMode !== 'low') {
                         this.playGlitchSound();
                     }
                 }

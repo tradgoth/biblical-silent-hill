@@ -769,6 +769,82 @@ footer .translation {
 }
 
 /* ============================================
+   PERFORMANCE-OPTIMIZED HORROR ANIMATIONS
+   GPU-accelerated, minimal repaints
+   ============================================ */
+
+/* Blood layer pulse - opacity only for GPU acceleration */
+@keyframes bloodPulse {
+    0%, 100% { opacity: 1; }
+    25% { opacity: 0.82; }
+    50% { opacity: 0.95; }
+    75% { opacity: 0.88; }
+}
+
+/* Blood glow flicker - fast, irregular */
+@keyframes bloodFlicker {
+    0%, 100% { opacity: 0.8; }
+    14% { opacity: 0.55; }
+    28% { opacity: 0.9; }
+    42% { opacity: 0.65; }
+    57% { opacity: 0.85; }
+    71% { opacity: 0.7; }
+}
+
+/* Fog drift - horizontal movement using transform */
+@keyframes fogDrift {
+    0% { transform: translateX(0) translateZ(0); }
+    100% { transform: translateX(-66.666%) translateZ(0); }
+}
+
+/* Fog vertical float */
+@keyframes fogFloat {
+    0%, 100% { transform: translateY(0) translateX(var(--fog-x, 0)); }
+    25% { transform: translateY(-2%) translateX(var(--fog-x, 0)); }
+    75% { transform: translateY(2%) translateX(var(--fog-x, 0)); }
+}
+
+/* Fog haze breathing */
+@keyframes hazeBreath {
+    0%, 100% { opacity: 0.5; }
+    25% { opacity: 0.7; }
+    50% { opacity: 0.4; }
+    75% { opacity: 0.8; }
+}
+
+/* Vignette breathing - opacity only */
+@keyframes vignetteBreath {
+    0%, 100% { opacity: 1; }
+    25% { opacity: 0.8; }
+    50% { opacity: 0.95; }
+    75% { opacity: 0.85; }
+}
+
+/* Scanline movement */
+@keyframes scanlineMove {
+    0% { transform: translateY(0) translateZ(0); }
+    100% { transform: translateY(8px) translateZ(0); }
+}
+
+/* Static noise flicker */
+@keyframes staticFlicker {
+    0%, 100% { opacity: 0.03; }
+    25% { opacity: 0.08; }
+    50% { opacity: 0.02; }
+    75% { opacity: 0.06; }
+}
+
+/* Symbol breathing glow */
+@keyframes symbolBreath {
+    0%, 100% {
+        text-shadow: 0 0 20px rgba(153, 0, 0, 0.4), 0 0 30px rgba(204, 0, 0, 0.5);
+    }
+    50% {
+        text-shadow: 0 0 30px rgba(153, 0, 0, 0.6), 0 0 50px rgba(204, 0, 0, 0.7);
+    }
+}
+
+/* ============================================
    WHISPER TEXT
    ============================================ */
 
