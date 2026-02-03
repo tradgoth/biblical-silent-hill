@@ -1,0 +1,249 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: #0a0a0a;
+    color: #d4d4d4;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+/* Navigation */
+nav {
+    position: sticky;
+    top: 0;
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #262626;
+    padding: 0.75rem;
+    z-index: 100;
+}
+
+nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    list-style: none;
+}
+
+nav a {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    border: 1px solid #404040;
+    background: rgba(23, 23, 23, 0.5);
+    color: #a3a3a3;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+nav a:hover,
+nav a.active {
+    border-color: #7f1d1d;
+    color: #fca5a5;
+    background: rgba(127, 29, 29, 0.3);
+}
+
+/* Header */
+header {
+    text-align: center;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid #262626;
+}
+
+header .symbol {
+    font-size: 2rem;
+    color: #991b1b;
+    margin-bottom: 0.5rem;
+}
+
+header h1 {
+    font-size: 1.5rem;
+    color: #991b1b;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.25rem;
+}
+
+header .subtitle {
+    font-size: 0.7rem;
+    color: #525252;
+    letter-spacing: 0.3em;
+}
+
+/* Content */
+main {
+    padding: 1.5rem 0;
+}
+
+main h2 {
+    color: #f87171;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    margin: 2rem 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #262626;
+}
+
+main h3 {
+    color: #f87171;
+    font-size: 0.8rem;
+    margin: 1rem 0 0.5rem 0;
+}
+
+main p {
+    color: #a3a3a3;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+main strong {
+    color: #f87171;
+}
+
+main blockquote {
+    border-left: 2px solid #7f1d1d;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: #d4d4d4;
+    font-style: italic;
+    font-size: 0.8rem;
+}
+
+main ul {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+main li {
+    color: #d4d4d4;
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+
+main hr {
+    border: none;
+    border-top: 1px solid #262626;
+    margin: 2rem 0;
+}
+
+/* Home page */
+.home-intro {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.home-intro .big-symbol {
+    font-size: 4rem;
+    color: #7f1d1d;
+}
+
+.home-intro h1 {
+    font-size: 2rem;
+    letter-spacing: 0.2em;
+    color: #dc2626;
+    margin: 1rem 0;
+}
+
+.home-intro .tagline {
+    color: #525252;
+    letter-spacing: 0.3em;
+    font-size: 0.7rem;
+}
+
+.home-intro .divider {
+    width: 8rem;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #7f1d1d, transparent);
+    margin: 1.5rem auto;
+}
+
+.nav-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    max-width: 400px;
+    margin: 2rem auto;
+}
+
+.nav-grid a {
+    background: rgba(23, 23, 23, 0.6);
+    border: 1px solid #262626;
+    padding: 1.5rem;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.nav-grid a:hover {
+    border-color: #7f1d1d;
+    background: rgba(127, 29, 29, 0.1);
+}
+
+.nav-grid .icon {
+    font-size: 1.5rem;
+    color: #b91c1c;
+    margin-bottom: 0.5rem;
+}
+
+.nav-grid .label {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: #525252;
+}
+
+/* Lexicon */
+.lexicon-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: rgba(23, 23, 23, 0.5);
+    border: 1px solid #262626;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.lexicon-item .symbol {
+    font-size: 1.5rem;
+    color: #b91c1c;
+    width: 2.5rem;
+    text-align: center;
+}
+
+.lexicon-item h3 {
+    margin: 0 0 0.25rem 0;
+}
+
+.lexicon-item p {
+    margin: 0;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 2rem 0;
+    border-top: 1px solid #262626;
+    margin-top: 2rem;
+}
+
+footer .motto {
+    color: #404040;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+}
+
+footer .translation {
+    color: #262626;
+    font-size: 0.65rem;
+    margin-top: 0.5rem;
+}
