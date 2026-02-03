@@ -58,7 +58,7 @@ const navLinks = [
         <!-- Audio indicator -->
         <div class="audio-indicator" id="audio-toggle" transition:persist="audio-toggle">
             <span class="icon">♪</span>
-            <span class="label">SOUND</span>
+            <span class="label">PLAY</span>
         </div>
 
         <nav transition:persist="nav">
@@ -209,6 +209,7 @@ const navLinks = [
                             this.musicStarted = true;
                             this.audioEnabled = true;
                             document.getElementById('audio-toggle')?.classList.remove('muted');
+                            this.updateAudioIndicatorText();
                         }).catch(() => {
                             // Autoplay prevented, will try again on interaction
                         });
@@ -375,6 +376,7 @@ const navLinks = [
                         this.audioInitialized = true;
                         this.audioEnabled = true;
                         document.getElementById('audio-toggle')?.classList.remove('muted');
+                        this.updateAudioIndicatorText();
                         this.startAmbientDrone();
                     } catch (e) {
                         console.log('Audio not supported');
@@ -399,6 +401,15 @@ const navLinks = [
                         }
                         this.stopAllAudio();
                     }
+                    this.updateAudioIndicatorText();
+                }
+
+                updateAudioIndicatorText() {
+                    const toggle = document.getElementById('audio-toggle');
+                    const label = toggle?.querySelector('.label');
+                    if (!label) return;
+
+                    label.textContent = this.audioEnabled ? 'PAUSE' : 'PLAY';
                 }
 
                 startAmbientDrone() {
@@ -782,6 +793,28 @@ const navLinks = [
             // Single instance of horror engine
             let horrorEngine = null;
 
+            // Updates the active navigation link indicator during view transitions
+            // Handles Astro's client-side navigation without page refresh
+            function updateActiveNavLink() {
+                // Normalize current path with trailing slash
+                let currentPath = window.location.pathname;
+                if (!currentPath.endsWith('/')) {
+                    currentPath += '/';
+                }
+
+                // Update active class on all nav links
+                const navLinks = document.querySelectorAll('nav a');
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+
+                    // Check if link href matches current path
+                    const linkHref = link.getAttribute('href');
+                    if (linkHref === currentPath) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
             function initHorrorEngine() {
                 if (!horrorEngine) {
                     horrorEngine = new BloodHorrorEngine();
@@ -793,9 +826,13 @@ const navLinks = [
 
             // Initialize on first load
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initHorrorEngine);
+                document.addEventListener('DOMContentLoaded', () => {
+                    initHorrorEngine();
+                    updateActiveNavLink();
+                });
             } else {
                 initHorrorEngine();
+                updateActiveNavLink();
             }
 
             // Reinitialize page content on Astro navigation
@@ -804,6 +841,9 @@ const navLinks = [
                     horrorEngine.setupPageLoad();
                 }
             });
+
+            // Update active nav link on Astro page transitions
+            document.addEventListener('astro:page-load', updateActiveNavLink);
         </script>
     </body>
 </html>
