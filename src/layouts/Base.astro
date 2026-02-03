@@ -2,17 +2,18 @@
 import "../styles/global.css";
 
 const { title, subtitle, symbol } = Astro.props;
-const currentPath = Astro.url.pathname;
+const currentPath = Astro.url.pathname.replace(/\/$/, '') + '/';
 
 const base = import.meta.env.BASE_URL;
 
 const navLinks = [
-    { href: `${base}`, label: "HOME" },
-    { href: `${base}/new-testament/`, label: "NEW TEST." },
-    { href: `${base}/old-testament/`, label: "OLD TEST." },
+    { href: `${base}/`, label: "HOME" },
+    { href: `${base}/new-testament/`, label: "NEW TESTAMENT" },
+    { href: `${base}/old-testament/`, label: "OLD TESTAMENT" },
     { href: `${base}/lilith/`, label: "LILITH" },
-    { href: `${base}/demonology/`, label: "DEMONS" },
-    { href: `${base}/symbolism/`, label: "SYMBOLS & ARTIFACTS" },
+    { href: `${base}/demonology/`, label: "DEMONOLOGY" },
+    { href: `${base}/symbolism/`, label: "SYMBOLISM" },
+    { href: `${base}/collective-unconscious/`, label: "UNCONSCIOUS" },
     { href: `${base}/lexicon/`, label: "LEXICON" },
 ];
 ---
@@ -23,8 +24,31 @@ const navLinks = [
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{title} | Silent Hill Biblical Themes</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     </head>
     <body>
+        <!-- Blood & Horror atmosphere layers -->
+        <div class="blood-layer" aria-hidden="true" id="blood-layer"></div>
+        <div class="blood-glow" aria-hidden="true" id="blood-glow"></div>
+        <div class="fog-layer" aria-hidden="true" id="fog-layer"></div>
+        <div class="fog-haze" aria-hidden="true" id="fog-haze"></div>
+        <div class="vignette" aria-hidden="true" id="vignette"></div>
+        <div class="scanlines" aria-hidden="true"></div>
+        <div class="static-noise" id="static-noise" aria-hidden="true"></div>
+
+        <!-- Jumpscare overlay -->
+        <div class="jumpscare-overlay" id="jumpscare-overlay">
+            <div class="scare-content" id="scare-content"></div>
+        </div>
+
+        <!-- Audio indicator -->
+        <div class="audio-indicator" id="audio-toggle">
+            <span class="icon">♪</span>
+            <span class="label">SOUND</span>
+        </div>
+
         <nav>
             <ul>
                 {
@@ -32,9 +56,8 @@ const navLinks = [
                         <li>
                             <a
                                 href={link.href}
-                                class={
-                                    currentPath === link.href ? "active" : ""
-                                }
+                                class={currentPath === link.href ? "active" : ""}
+                                data-text={link.label}
                             >
                                 {link.label}
                             </a>
@@ -47,14 +70,15 @@ const navLinks = [
         {
             title !== "Silent Hill" && (
                 <header>
-                    <div class="symbol">{symbol}</div>
-                    <h1>{title}</h1>
+                    <div class="symbol glitch-text">{symbol}</div>
+                    <h1 class="glitch-text">{title}</h1>
                     <div class="subtitle">{subtitle}</div>
+                    <div class="header-border"></div>
                 </header>
             )
         }
 
-        <div class="container">
+        <div class="container page-content">
             <main>
                 <slot />
             </main>
@@ -64,5 +88,747 @@ const navLinks = [
             <div class="motto">☩ IN STERQUILINIIS INVENITUR ☩</div>
             <div class="translation">"In the dirt, it will be found"</div>
         </footer>
+
+        <script>
+            import { animate, stagger, inView, scroll } from "motion";
+
+            // ============================================
+            // DARK RED BLOOD HORROR ENGINE
+            // Motion-powered animations
+            // ============================================
+
+            class BloodHorrorEngine {
+                constructor() {
+                    this.audioContext = null;
+                    this.audioEnabled = false;
+                    this.audioInitialized = false;
+                    this.oscillators = [];
+                    this.gainNodes = [];
+                    this.lastInteraction = Date.now();
+                    this.jumpscareTriggered = false;
+                    this.whisperCount = 0;
+                    this.maxWhispers = 3;
+
+                    this.whispers = [
+                        "The blood...",
+                        "It never stops...",
+                        "Can you see it?",
+                        "The walls are bleeding",
+                        "Silent Hill",
+                        "In my restless dreams",
+                        "I see that town",
+                        "There was a hole here",
+                        "It's gone now",
+                        "Born from a wish",
+                        "Forgive me",
+                        "The darkness",
+                        "Red pyramid",
+                        "Behind you",
+                        "Don't look",
+                        "Turn back",
+                        "Dead people don't write letters",
+                        "Mary...",
+                        "James...",
+                        "You killed her",
+                        "The monster",
+                        "Something's wrong"
+                    ];
+
+                    this.scareSymbols = ['☠', '✝', '☩', '⛧', '†', '☠', '💀', '⛧'];
+
+                    this.init();
+                }
+
+                init() {
+                    this.setupMotionAnimations();
+                    this.setupAudioToggle();
+                    this.setupGlitchEffects();
+                    this.setupWhispers();
+                    this.setupJumpscares();
+                    this.setupScrollEffects();
+                    this.setupIdleDetection();
+                    this.setupRandomEvents();
+                    this.setupPageLoad();
+                }
+
+                // ============================================
+                // MOTION ANIMATIONS
+                // ============================================
+                setupMotionAnimations() {
+                    // Blood layer pulsing
+                    const bloodLayer = document.getElementById('blood-layer');
+                    if (bloodLayer) {
+                        animate(
+                            bloodLayer,
+                            {
+                                opacity: [1, 0.85, 1],
+                                filter: ['brightness(1)', 'brightness(1.1)', 'brightness(1)']
+                            },
+                            { duration: 8, repeat: Infinity, easing: 'ease-in-out' }
+                        );
+                    }
+
+                    // Blood glow flickering
+                    const bloodGlow = document.getElementById('blood-glow');
+                    if (bloodGlow) {
+                        animate(
+                            bloodGlow,
+                            { opacity: [0.8, 0.6, 0.9, 0.7, 0.8] },
+                            { duration: 0.6, repeat: Infinity }
+                        );
+                    }
+
+                    // Fog drift
+                    const fogLayer = document.getElementById('fog-layer');
+                    if (fogLayer) {
+                        animate(
+                            fogLayer,
+                            { x: ['0%', '-66.666%'] },
+                            { duration: 120, repeat: Infinity, easing: 'linear' }
+                        );
+                    }
+
+                    // Fog haze pulse
+                    const fogHaze = document.getElementById('fog-haze');
+                    if (fogHaze) {
+                        animate(
+                            fogHaze,
+                            { opacity: [0.5, 0.8, 0.5] },
+                            { duration: 15, repeat: Infinity, easing: 'ease-in-out' }
+                        );
+                    }
+
+                    // Vignette breathing
+                    const vignette = document.getElementById('vignette');
+                    if (vignette) {
+                        animate(
+                            vignette,
+                            { opacity: [1, 0.85, 1] },
+                            { duration: 6, repeat: Infinity, easing: 'ease-in-out' }
+                        );
+                    }
+
+                    // Scanlines movement
+                    const scanlines = document.querySelector('.scanlines');
+                    if (scanlines) {
+                        animate(
+                            scanlines,
+                            { y: [0, 4] },
+                            { duration: 10, repeat: Infinity, easing: 'linear' }
+                        );
+                    }
+
+                    // Static noise flicker
+                    const staticNoise = document.getElementById('static-noise');
+                    if (staticNoise) {
+                        animate(
+                            staticNoise,
+                            { opacity: [0.03, 0.06, 0.03] },
+                            { duration: 0.1, repeat: Infinity }
+                        );
+                    }
+                }
+
+                setupPageLoad() {
+                    // Fade in page content
+                    const pageContent = document.querySelector('.page-content');
+                    if (pageContent) {
+                        animate(
+                            pageContent,
+                            {
+                                opacity: [0, 1],
+                                filter: ['blur(8px) brightness(0.2)', 'blur(0) brightness(1)'],
+                                scale: [0.98, 1]
+                            },
+                            { duration: 1.5, easing: 'ease-out' }
+                        );
+                    }
+
+                    // Stagger animate main children
+                    const mainChildren = document.querySelectorAll('main > *');
+                    if (mainChildren.length > 0) {
+                        animate(
+                            mainChildren,
+                            {
+                                opacity: [0, 1],
+                                y: [20, 0],
+                                filter: ['blur(2px)', 'blur(0)']
+                            },
+                            {
+                                duration: 0.6,
+                                delay: stagger(0.05),
+                                easing: 'ease-out'
+                            }
+                        );
+                    }
+
+                    // Animate header elements
+                    const headerSymbol = document.querySelector('header .symbol');
+                    const headerH1 = document.querySelector('header h1');
+                    const headerSubtitle = document.querySelector('header .subtitle');
+
+                    if (headerSymbol) {
+                        animate(
+                            headerSymbol,
+                            { opacity: [0, 1], filter: ['blur(4px)', 'blur(0)'] },
+                            { duration: 1, delay: 0.2, easing: 'ease-out' }
+                        );
+
+                        // Symbol breathing
+                        setTimeout(() => {
+                            animate(
+                                headerSymbol,
+                                {
+                                    textShadow: [
+                                        '0 0 20px rgba(153, 0, 0, 0.4), 0 0 30px rgba(204, 0, 0, 0.5)',
+                                        '0 0 30px rgba(153, 0, 0, 0.6), 0 0 50px rgba(204, 0, 0, 0.7)',
+                                        '0 0 20px rgba(153, 0, 0, 0.4), 0 0 30px rgba(204, 0, 0, 0.5)'
+                                    ]
+                                },
+                                { duration: 4, repeat: Infinity, easing: 'ease-in-out' }
+                            );
+                        }, 1200);
+                    }
+
+                    if (headerH1) {
+                        animate(
+                            headerH1,
+                            { opacity: [0, 1], filter: ['blur(4px)', 'blur(0)'] },
+                            { duration: 1, delay: 0.4, easing: 'ease-out' }
+                        );
+                    }
+
+                    if (headerSubtitle) {
+                        animate(
+                            headerSubtitle,
+                            { opacity: [0, 1], filter: ['blur(4px)', 'blur(0)'] },
+                            { duration: 1, delay: 0.6, easing: 'ease-out' }
+                        );
+                    }
+
+                    // Home intro animations
+                    const bigSymbol = document.querySelector('.home-intro .big-symbol');
+                    const homeH1 = document.querySelector('.home-intro h1');
+                    const tagline = document.querySelector('.home-intro .tagline');
+                    const divider = document.querySelector('.home-intro .divider');
+
+                    if (bigSymbol) {
+                        animate(
+                            bigSymbol,
+                            { opacity: [0, 1] },
+                            { duration: 1.2, easing: 'ease-out' }
+                        );
+
+                        setTimeout(() => {
+                            animate(
+                                bigSymbol,
+                                {
+                                    textShadow: [
+                                        '0 0 30px rgba(153, 0, 0, 0.6), 0 0 60px rgba(204, 0, 0, 0.5)',
+                                        '0 0 40px rgba(153, 0, 0, 0.8), 0 0 80px rgba(204, 0, 0, 0.7)',
+                                        '0 0 30px rgba(153, 0, 0, 0.6), 0 0 60px rgba(204, 0, 0, 0.5)'
+                                    ]
+                                },
+                                { duration: 4, repeat: Infinity, easing: 'ease-in-out' }
+                            );
+                        }, 1200);
+                    }
+
+                    if (homeH1) {
+                        animate(
+                            homeH1,
+                            { opacity: [0, 1] },
+                            { duration: 1.2, delay: 0.3, easing: 'ease-out' }
+                        );
+                    }
+
+                    if (tagline) {
+                        animate(
+                            tagline,
+                            { opacity: [0, 1] },
+                            { duration: 1.2, delay: 0.5, easing: 'ease-out' }
+                        );
+                    }
+
+                    if (divider) {
+                        animate(
+                            divider,
+                            { opacity: [0, 1] },
+                            { duration: 1, delay: 0.7, easing: 'ease-out' }
+                        );
+                    }
+
+                    // Setup scroll-triggered animations
+                    const navGridLinks = document.querySelectorAll('.nav-grid a');
+                    navGridLinks.forEach((link, i) => {
+                        inView(link, () => {
+                            animate(
+                                link,
+                                {
+                                    opacity: [0, 1],
+                                    y: [30, 0]
+                                },
+                                { duration: 0.5, delay: i * 0.1 }
+                            );
+                        }, { amount: 0.3 });
+                    });
+
+                    const lexiconItems = document.querySelectorAll('.lexicon-item');
+                    lexiconItems.forEach((item, i) => {
+                        inView(item, () => {
+                            animate(
+                                item,
+                                {
+                                    opacity: [0, 1],
+                                    x: [-30, 0]
+                                },
+                                { duration: 0.5, delay: i * 0.1 }
+                            );
+                        }, { amount: 0.3 });
+                    });
+
+                    // Parallax scroll for blood layer
+                    const bloodLayerEl = document.getElementById('blood-layer');
+                    if (bloodLayerEl) {
+                        scroll(
+                            animate(bloodLayerEl, { y: [0, -100] }),
+                            { target: document.body }
+                        );
+                    }
+                }
+
+                // ============================================
+                // AUDIO SYSTEM
+                // ============================================
+                setupAudioToggle() {
+                    const toggle = document.getElementById('audio-toggle');
+                    if (!toggle) return;
+
+                    toggle.addEventListener('click', () => {
+                        if (!this.audioInitialized) {
+                            this.initAudio();
+                        } else {
+                            this.toggleAudio();
+                        }
+                    });
+                }
+
+                initAudio() {
+                    try {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        this.audioInitialized = true;
+                        this.audioEnabled = true;
+                        document.getElementById('audio-toggle')?.classList.remove('muted');
+                        this.startAmbientDrone();
+                    } catch (e) {
+                        console.log('Audio not supported');
+                    }
+                }
+
+                toggleAudio() {
+                    this.audioEnabled = !this.audioEnabled;
+                    const toggle = document.getElementById('audio-toggle');
+
+                    if (this.audioEnabled) {
+                        toggle?.classList.remove('muted');
+                        this.startAmbientDrone();
+                    } else {
+                        toggle?.classList.add('muted');
+                        this.stopAllAudio();
+                    }
+                }
+
+                startAmbientDrone() {
+                    if (!this.audioContext || !this.audioEnabled) return;
+
+                    // Deep bass drone
+                    const bassOsc = this.audioContext.createOscillator();
+                    const bassGain = this.audioContext.createGain();
+                    bassOsc.type = 'sine';
+                    bassOsc.frequency.setValueAtTime(40, this.audioContext.currentTime);
+                    bassGain.gain.setValueAtTime(0.08, this.audioContext.currentTime);
+                    bassOsc.connect(bassGain);
+                    bassGain.connect(this.audioContext.destination);
+                    bassOsc.start();
+                    this.oscillators.push(bassOsc);
+                    this.gainNodes.push(bassGain);
+
+                    // Eerie high frequency
+                    const highOsc = this.audioContext.createOscillator();
+                    const highGain = this.audioContext.createGain();
+                    highOsc.type = 'sine';
+                    highOsc.frequency.setValueAtTime(880, this.audioContext.currentTime);
+                    highGain.gain.setValueAtTime(0.015, this.audioContext.currentTime);
+                    highOsc.connect(highGain);
+                    highGain.connect(this.audioContext.destination);
+                    highOsc.start();
+                    this.oscillators.push(highOsc);
+                    this.gainNodes.push(highGain);
+
+                    this.modulateAmbient();
+                }
+
+                modulateAmbient() {
+                    if (!this.audioEnabled || !this.audioContext) return;
+
+                    const now = this.audioContext.currentTime;
+
+                    this.oscillators.forEach((osc, i) => {
+                        const baseFreq = i === 0 ? 40 : 880;
+                        const variation = (Math.random() - 0.5) * (i === 0 ? 10 : 100);
+                        osc.frequency.setTargetAtTime(baseFreq + variation, now, 2);
+                    });
+
+                    this.gainNodes.forEach((gain, i) => {
+                        const baseGain = i === 0 ? 0.08 : 0.015;
+                        const variation = (Math.random() - 0.5) * 0.03;
+                        gain.gain.setTargetAtTime(Math.max(0, baseGain + variation), now, 1);
+                    });
+
+                    setTimeout(() => this.modulateAmbient(), 3000 + Math.random() * 4000);
+                }
+
+                stopAllAudio() {
+                    this.oscillators.forEach(osc => {
+                        try { osc.stop(); } catch(e) {}
+                    });
+                    this.oscillators = [];
+                    this.gainNodes = [];
+                }
+
+                playJumpscareSound() {
+                    if (!this.audioContext || !this.audioEnabled) return;
+
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, this.audioContext.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(50, this.audioContext.currentTime + 0.3);
+
+                    gain.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.4);
+
+                    osc.connect(gain);
+                    gain.connect(this.audioContext.destination);
+                    osc.start();
+                    osc.stop(this.audioContext.currentTime + 0.4);
+                }
+
+                playWhisperSound() {
+                    if (!this.audioContext || !this.audioEnabled) return;
+
+                    const bufferSize = this.audioContext.sampleRate * 0.5;
+                    const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = (Math.random() * 2 - 1) * 0.1;
+                    }
+
+                    const source = this.audioContext.createBufferSource();
+                    source.buffer = buffer;
+
+                    const filter = this.audioContext.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(1000, this.audioContext.currentTime);
+                    filter.Q.setValueAtTime(5, this.audioContext.currentTime);
+
+                    const gain = this.audioContext.createGain();
+                    gain.gain.setValueAtTime(0, this.audioContext.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.1, this.audioContext.currentTime + 0.1);
+                    gain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.5);
+
+                    source.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.audioContext.destination);
+                    source.start();
+                }
+
+                // ============================================
+                // GLITCH EFFECTS
+                // ============================================
+                setupGlitchEffects() {
+                    const triggerGlitch = () => {
+                        const elements = document.querySelectorAll('.glitch-text');
+                        if (elements.length === 0) return;
+
+                        const el = elements[Math.floor(Math.random() * elements.length)];
+
+                        animate(
+                            el,
+                            {
+                                x: [-2, 2, -2, 0],
+                                y: [1, -1, 1, 0],
+                                textShadow: [
+                                    'inherit',
+                                    '-3px 0 #cc0000, 3px 0 #990000',
+                                    '3px 0 #cc0000, -3px 0 #990000',
+                                    'inherit'
+                                ]
+                            },
+                            { duration: 0.3, easing: 'ease-out' }
+                        );
+
+                        setTimeout(triggerGlitch, 5000 + Math.random() * 15000);
+                    };
+
+                    setTimeout(triggerGlitch, 3000);
+                }
+
+                triggerStaticBurst() {
+                    const staticEl = document.getElementById('static-noise');
+                    if (!staticEl) return;
+
+                    staticEl.classList.add('active');
+                    animate(
+                        staticEl,
+                        { opacity: [0.5, 0.03] },
+                        { duration: 0.5, easing: 'ease-out' }
+                    );
+                    setTimeout(() => staticEl.classList.remove('active'), 500);
+                }
+
+                triggerHeavyGlitch() {
+                    const body = document.body;
+
+                    animate(
+                        body,
+                        {
+                            x: [-5, 5, -3, 3, 0],
+                            skewX: [-2, 2, 0],
+                            filter: [
+                                'none',
+                                'hue-rotate(90deg)',
+                                'saturate(2) contrast(1.5)',
+                                'invert(1)',
+                                'none'
+                            ]
+                        },
+                        { duration: 0.4, easing: 'ease-out' }
+                    );
+
+                    this.triggerStaticBurst();
+                }
+
+                // ============================================
+                // WHISPERS
+                // ============================================
+                setupWhispers() {
+                    const showWhisper = () => {
+                        if (this.whisperCount >= this.maxWhispers) {
+                            this.whisperCount = 0;
+                        }
+
+                        const text = this.whispers[Math.floor(Math.random() * this.whispers.length)];
+                        const whisper = document.createElement('div');
+                        whisper.className = 'whisper';
+                        whisper.textContent = text;
+                        whisper.style.left = (10 + Math.random() * 70) + '%';
+                        whisper.style.top = (10 + Math.random() * 70) + '%';
+                        whisper.style.transform = `rotate(${(Math.random() - 0.5) * 20}deg)`;
+
+                        document.body.appendChild(whisper);
+                        this.playWhisperSound();
+                        this.whisperCount++;
+
+                        animate(
+                            whisper,
+                            {
+                                opacity: [0, 0.4, 0.3, 0],
+                                filter: ['blur(10px)', 'blur(2px)', 'blur(2px)', 'blur(10px)']
+                            },
+                            { duration: 4, easing: 'ease-out' }
+                        );
+
+                        setTimeout(() => whisper.remove(), 4000);
+                        setTimeout(showWhisper, 20000 + Math.random() * 40000);
+                    };
+
+                    setTimeout(showWhisper, 15000 + Math.random() * 20000);
+                }
+
+                // ============================================
+                // JUMPSCARES
+                // ============================================
+                setupJumpscares() {
+                    document.addEventListener('scroll', () => {
+                        if (Math.random() < 0.002 && !this.jumpscareTriggered) {
+                            this.triggerMiniScare();
+                        }
+                    });
+                }
+
+                triggerMiniScare() {
+                    if (this.jumpscareTriggered) return;
+                    this.jumpscareTriggered = true;
+
+                    this.triggerHeavyGlitch();
+                    this.playJumpscareSound();
+
+                    setTimeout(() => {
+                        this.jumpscareTriggered = false;
+                    }, 30000);
+                }
+
+                triggerFullJumpscare() {
+                    const overlay = document.getElementById('jumpscare-overlay');
+                    const content = document.getElementById('scare-content');
+                    if (!overlay || !content) return;
+
+                    content.innerHTML = this.scareSymbols[Math.floor(Math.random() * this.scareSymbols.length)];
+                    overlay.classList.add('active');
+                    this.playJumpscareSound();
+                    this.triggerStaticBurst();
+
+                    animate(
+                        content,
+                        {
+                            x: [-10, 10, -5, 5, 0],
+                            y: [5, -5, -10, 5, 0],
+                            rotate: [-2, 2, -1, 1, 0]
+                        },
+                        { duration: 0.2, repeat: 2 }
+                    );
+
+                    animate(
+                        overlay,
+                        {
+                            background: ['#ffffff', '#cc0000', '#000000']
+                        },
+                        { duration: 0.4, easing: 'ease-out' }
+                    );
+
+                    setTimeout(() => {
+                        overlay.classList.remove('active');
+                    }, 400);
+                }
+
+                // ============================================
+                // SCROLL EFFECTS
+                // ============================================
+                setupScrollEffects() {
+                    let lastScroll = 0;
+                    let scrollVelocity = 0;
+
+                    window.addEventListener('scroll', () => {
+                        const currentScroll = window.scrollY;
+                        scrollVelocity = Math.abs(currentScroll - lastScroll);
+                        lastScroll = currentScroll;
+
+                        if (scrollVelocity > 100) {
+                            this.triggerStaticBurst();
+                        }
+
+                        if (scrollVelocity > 200 && Math.random() < 0.1) {
+                            this.triggerMiniScare();
+                        }
+                    });
+                }
+
+                // ============================================
+                // IDLE DETECTION
+                // ============================================
+                setupIdleDetection() {
+                    setInterval(() => {
+                        const idleTime = Date.now() - this.lastInteraction;
+
+                        if (idleTime > 30000 && Math.random() < 0.05) {
+                            this.showIdleWhisper();
+                        }
+
+                        if (idleTime > 60000 && Math.random() < 0.02) {
+                            this.triggerMiniScare();
+                        }
+                    }, 5000);
+
+                    ['mousemove', 'keydown', 'scroll', 'click'].forEach(event => {
+                        document.addEventListener(event, () => {
+                            this.lastInteraction = Date.now();
+                        });
+                    });
+                }
+
+                showIdleWhisper() {
+                    const text = this.whispers[Math.floor(Math.random() * this.whispers.length)];
+                    const whisper = document.createElement('div');
+                    whisper.className = 'whisper';
+                    whisper.textContent = text;
+                    whisper.style.left = (20 + Math.random() * 60) + '%';
+                    whisper.style.top = (20 + Math.random() * 60) + '%';
+
+                    document.body.appendChild(whisper);
+                    this.playWhisperSound();
+
+                    animate(
+                        whisper,
+                        {
+                            opacity: [0, 0.4, 0],
+                            filter: ['blur(10px)', 'blur(2px)', 'blur(10px)']
+                        },
+                        { duration: 4, easing: 'ease-out' }
+                    );
+
+                    setTimeout(() => whisper.remove(), 4000);
+                }
+
+                // ============================================
+                // RANDOM EVENTS
+                // ============================================
+                setupRandomEvents() {
+                    setInterval(() => {
+                        if (Math.random() < 0.03) {
+                            this.screenFlicker();
+                        }
+                    }, 10000);
+
+                    setInterval(() => {
+                        if (Math.random() < 0.05) {
+                            this.distortRandomText();
+                        }
+                    }, 15000);
+                }
+
+                screenFlicker() {
+                    const body = document.body;
+
+                    animate(
+                        body,
+                        { filter: ['brightness(1)', 'brightness(0.3)', 'brightness(1.5)', 'brightness(0.5)', 'brightness(1)'] },
+                        { duration: 0.13, easing: 'steps(4)' }
+                    );
+                }
+
+                distortRandomText() {
+                    const paragraphs = document.querySelectorAll('main p');
+                    if (paragraphs.length === 0) return;
+
+                    const p = paragraphs[Math.floor(Math.random() * paragraphs.length)];
+
+                    animate(
+                        p,
+                        {
+                            color: ['inherit', '#990000', 'inherit'],
+                            textShadow: ['none', '0 0 10px rgba(153, 0, 0, 0.6)', 'none']
+                        },
+                        { duration: 2, easing: 'ease-in-out' }
+                    );
+                }
+            }
+
+            // Initialize horror engine when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    new BloodHorrorEngine();
+                });
+            } else {
+                new BloodHorrorEngine();
+            }
+
+            // Also initialize on Astro page navigation
+            document.addEventListener('astro:page-load', () => {
+                new BloodHorrorEngine();
+            });
+        </script>
     </body>
 </html>

@@ -1,249 +1,620 @@
+@import "tailwindcss";
+
+/* ============================================
+   DARK RED BLOOD THEME - Tailwind Custom
+   No brown tones, pure dark red/blood aesthetic
+   ============================================ */
+
+@theme {
+    /* Core Blood Red Palette */
+    --color-void: #000000;
+    --color-abyss: #0a0000;
+    --color-darkness: #1a0000;
+    --color-shadow: #2a0505;
+
+    /* Blood Reds - Primary Theme */
+    --color-blood-darkest: #330000;
+    --color-blood-darker: #4d0000;
+    --color-blood-dark: #660000;
+    --color-blood: #800000;
+    --color-blood-bright: #990000;
+    --color-blood-red: #cc0000;
+    --color-blood-crimson: #ff0000;
+
+    /* Deep Reds */
+    --color-wine: #4a0e0e;
+    --color-burgundy: #5c1010;
+    --color-maroon: #6b1515;
+    --color-scarlet: #8b1a1a;
+
+    /* Text Colors */
+    --color-bone: #d4c5b0;
+    --color-ash: #8a7a6a;
+    --color-ash-dark: #5a4a3a;
+    --color-blood-text: #ff4444;
+
+    /* Glows */
+    --color-blood-glow: rgba(153, 0, 0, 0.6);
+    --color-crimson-glow: rgba(204, 0, 0, 0.5);
+    --color-red-glow: rgba(255, 68, 68, 0.4);
+
+    /* Shadows */
+    --shadow-blood: 0 0 20px rgba(153, 0, 0, 0.4);
+    --shadow-crimson: 0 0 30px rgba(204, 0, 0, 0.5);
+    --shadow-dark: 0 4px 20px rgba(0, 0, 0, 0.8);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+    @apply m-0 p-0 box-border;
+}
+
+html {
+    @apply cursor-default;
 }
 
 body {
-    font-family: 'Courier New', monospace;
-    background: #0a0a0a;
-    color: #d4d4d4;
-    min-height: 100vh;
+    @apply min-h-screen overflow-x-hidden;
+    @apply bg-void text-bone;
+    @apply font-mono tracking-wide leading-relaxed;
+    font-family: 'Share Tech Mono', 'Consolas', 'Courier New', monospace;
 }
 
-.container {
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 1.5rem;
+/* ============================================
+   BLOOD & FOG BACKGROUND LAYERS
+   ============================================ */
+
+.blood-layer {
+    @apply fixed inset-0 pointer-events-none z-0;
+    background:
+        radial-gradient(ellipse 120% 80% at 50% 120%, var(--color-blood-dark) 0%, transparent 50%),
+        radial-gradient(ellipse 80% 60% at 20% 80%, var(--color-maroon) 0%, transparent 40%),
+        radial-gradient(ellipse 70% 50% at 80% 90%, var(--color-blood) 0%, transparent 35%),
+        radial-gradient(ellipse at 50% 50%, var(--color-shadow) 0%, var(--color-abyss) 50%, var(--color-void) 100%);
 }
 
-/* Navigation */
+.blood-glow {
+    @apply fixed bottom-0 left-0 w-full pointer-events-none z-[1];
+    height: 60%;
+    background: linear-gradient(
+        to top,
+        rgba(153, 0, 0, 0.4) 0%,
+        rgba(128, 0, 0, 0.25) 20%,
+        rgba(77, 0, 0, 0.15) 40%,
+        transparent 100%
+    );
+}
+
+.fog-layer {
+    @apply fixed top-0 left-0 pointer-events-none z-[2] opacity-80;
+    width: 300%;
+    height: 100%;
+    background:
+        radial-gradient(ellipse 80% 60% at 10% 20%, rgba(100, 20, 20, 0.35) 0%, transparent 50%),
+        radial-gradient(ellipse 70% 50% at 90% 80%, rgba(80, 15, 15, 0.3) 0%, transparent 45%),
+        radial-gradient(ellipse 90% 70% at 50% 50%, rgba(60, 10, 10, 0.25) 0%, transparent 55%);
+}
+
+.vignette {
+    @apply fixed inset-0 pointer-events-none z-[3];
+    background: radial-gradient(ellipse at center,
+        transparent 0%,
+        transparent 20%,
+        rgba(26, 0, 0, 0.5) 40%,
+        rgba(20, 0, 0, 0.75) 60%,
+        rgba(10, 0, 0, 0.9) 80%,
+        rgba(0, 0, 0, 0.98) 100%);
+}
+
+.fog-haze {
+    @apply fixed inset-0 pointer-events-none z-[4] opacity-60;
+    background: linear-gradient(
+        180deg,
+        rgba(80, 15, 15, 0.2) 0%,
+        transparent 30%,
+        transparent 60%,
+        rgba(100, 20, 20, 0.25) 100%
+    );
+}
+
+.scanlines {
+    @apply fixed inset-0 pointer-events-none z-[998] opacity-30;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 2px,
+        rgba(0, 0, 0, 0.2) 2px,
+        rgba(0, 0, 0, 0.2) 4px
+    );
+}
+
+.static-noise {
+    @apply fixed inset-0 pointer-events-none z-[997] opacity-0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+}
+
+.static-noise.active {
+    @apply opacity-30;
+}
+
+/* Body texture overlays */
+body::before {
+    @apply content-[''] fixed inset-0 pointer-events-none z-[1000] opacity-10;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+
 nav {
-    position: sticky;
-    top: 0;
-    background: rgba(10, 10, 10, 0.95);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid #262626;
-    padding: 0.75rem;
-    z-index: 100;
+    @apply sticky top-0 z-[100] p-0;
+    @apply border-b border-blood-darker;
+    background: linear-gradient(
+        to bottom,
+        rgba(26, 0, 0, 0.98) 0%,
+        rgba(20, 0, 0, 0.95) 100%
+    );
+    box-shadow: var(--shadow-blood);
+}
+
+nav::after {
+    @apply content-[''] absolute bottom-0 left-0 right-0 h-[2px] opacity-60;
+    background: linear-gradient(90deg, transparent, var(--color-blood), var(--color-blood-red), var(--color-blood), transparent);
 }
 
 nav ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: center;
-    list-style: none;
+    @apply flex flex-wrap gap-0 justify-center list-none p-2 m-0;
+}
+
+nav li {
+    @apply block relative;
+}
+
+nav li:not(:last-child)::after {
+    @apply content-['†'] absolute right-[-0.15rem] top-1/2 -translate-y-1/2;
+    @apply text-blood-dark text-[0.5rem] opacity-40 pointer-events-none;
 }
 
 nav a {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.7rem;
-    letter-spacing: 0.1em;
-    border: 1px solid #404040;
-    background: rgba(23, 23, 23, 0.5);
-    color: #a3a3a3;
-    text-decoration: none;
-    transition: all 0.3s;
+    @apply block px-4 py-2.5 text-[0.7rem] tracking-widest;
+    @apply bg-transparent text-ash no-underline uppercase;
+    @apply transition-all duration-300 relative border-none whitespace-nowrap;
 }
 
-nav a:hover,
+nav a::before {
+    @apply content-[''] absolute bottom-1.5 left-1/2 w-0 h-[1px];
+    @apply bg-blood-red transition-all duration-300 -translate-x-1/2;
+    box-shadow: var(--shadow-blood);
+}
+
+nav a:hover {
+    @apply text-bone;
+    text-shadow: var(--shadow-blood);
+}
+
+nav a:hover::before {
+    @apply w-[70%];
+}
+
 nav a.active {
-    border-color: #7f1d1d;
-    color: #fca5a5;
-    background: rgba(127, 29, 29, 0.3);
+    @apply text-blood-bright;
+    text-shadow: var(--shadow-crimson);
 }
 
-/* Header */
+nav a.active::before {
+    @apply w-[80%] h-[2px] bg-blood-red;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
 header {
-    text-align: center;
-    padding: 1.5rem 0;
-    border-bottom: 1px solid #262626;
+    @apply text-center py-12 px-4 relative z-10 overflow-hidden;
+    background: linear-gradient(to bottom, rgba(77, 0, 0, 0.3), transparent);
+}
+
+header::before {
+    @apply content-[''] absolute inset-0 opacity-10 pointer-events-none;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='plaster'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23plaster)'/%3E%3C/svg%3E");
+}
+
+header .header-border {
+    @apply absolute bottom-0 left-0 right-0 h-[2px] opacity-70;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--color-blood-dark) 20%,
+        var(--color-blood-red) 50%,
+        var(--color-blood-dark) 80%,
+        transparent 100%
+    );
+    box-shadow: var(--shadow-blood);
 }
 
 header .symbol {
-    font-size: 2rem;
-    color: #991b1b;
-    margin-bottom: 0.5rem;
+    @apply text-6xl text-blood-bright mb-4 block relative;
+    text-shadow: var(--shadow-blood), var(--shadow-crimson), 2px 2px 8px rgba(0, 0, 0, 0.9);
 }
 
 header h1 {
-    font-size: 1.5rem;
-    color: #991b1b;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.25rem;
+    @apply text-3xl text-blood-bright tracking-[0.25em] mb-2.5 relative uppercase;
+    font-family: 'Special Elite', 'American Typewriter', 'Courier New', monospace;
+    text-shadow: var(--shadow-blood), var(--shadow-crimson), 2px 2px 6px rgba(0, 0, 0, 0.9);
 }
 
 header .subtitle {
-    font-size: 0.7rem;
-    color: #525252;
-    letter-spacing: 0.3em;
+    @apply text-sm text-ash tracking-[0.3em] uppercase relative;
 }
 
-/* Content */
+/* ============================================
+   MAIN CONTENT
+   ============================================ */
+
+.container {
+    @apply max-w-[680px] mx-auto px-6 relative z-10;
+}
+
 main {
-    padding: 1.5rem 0;
+    @apply py-6 relative z-10;
 }
 
 main h2 {
-    color: #f87171;
-    font-size: 0.9rem;
-    letter-spacing: 0.05em;
-    margin: 2rem 0 1rem 0;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #262626;
+    @apply text-xl text-blood-bright tracking-[0.12em] mt-10 mb-4 pb-3;
+    @apply border-b border-blood-darker relative uppercase;
+    font-family: 'Special Elite', 'American Typewriter', 'Courier New', monospace;
+    text-shadow: var(--shadow-blood);
+}
+
+main h2::after {
+    @apply content-[''] absolute bottom-[-1px] left-0 w-full h-[1px] opacity-80;
+    background: linear-gradient(to right, var(--color-blood), var(--color-blood-red), transparent);
 }
 
 main h3 {
-    color: #f87171;
-    font-size: 0.8rem;
-    margin: 1rem 0 0.5rem 0;
+    @apply text-base text-blood tracking-[0.1em] mt-7 mb-3;
+    font-family: 'Special Elite', 'American Typewriter', 'Courier New', monospace;
+    text-shadow: 0 0 8px rgba(128, 0, 0, 0.4);
 }
 
 main p {
-    color: #a3a3a3;
-    font-size: 0.8rem;
-    line-height: 1.7;
-    margin-bottom: 1rem;
+    @apply text-bone text-[0.95rem] leading-[1.85] mb-4;
 }
 
 main strong {
-    color: #f87171;
+    @apply text-bone;
+    text-shadow: 0 0 5px rgba(212, 197, 176, 0.2);
 }
 
 main blockquote {
-    border-left: 2px solid #7f1d1d;
-    padding-left: 1rem;
-    margin: 1rem 0;
-    color: #d4d4d4;
-    font-style: italic;
-    font-size: 0.8rem;
+    @apply border-l-[3px] border-blood py-3.5 px-5 my-6;
+    @apply text-ash italic text-[0.95rem] rounded-r;
+    background: linear-gradient(to right, rgba(128, 0, 0, 0.2), transparent);
+    box-shadow: 0 0 20px rgba(128, 0, 0, 0.15);
 }
 
 main ul {
-    margin: 1rem 0;
-    padding-left: 1.5rem;
+    @apply my-5 pl-6;
 }
 
 main li {
-    color: #d4d4d4;
-    font-size: 0.8rem;
-    margin-bottom: 0.5rem;
+    @apply text-bone text-[0.95rem] mb-2 relative;
+}
+
+main li::marker {
+    @apply text-blood;
 }
 
 main hr {
-    border: none;
-    border-top: 1px solid #262626;
-    margin: 2rem 0;
+    @apply border-none h-[1px] my-10 opacity-60;
+    background: linear-gradient(to right, transparent, var(--color-blood), var(--color-blood-red), var(--color-blood), transparent);
+    box-shadow: var(--shadow-blood);
 }
 
-/* Home page */
+/* ============================================
+   HOME PAGE
+   ============================================ */
+
 .home-intro {
-    text-align: center;
-    margin-bottom: 2rem;
+    @apply text-center mb-12 py-6 relative z-10;
 }
 
 .home-intro .big-symbol {
-    font-size: 4rem;
-    color: #7f1d1d;
+    @apply text-[7rem] text-blood-bright;
+    text-shadow:
+        var(--shadow-blood),
+        var(--shadow-crimson),
+        0 0 90px rgba(153, 0, 0, 0.4),
+        3px 3px 15px rgba(0, 0, 0, 0.9);
 }
 
 .home-intro h1 {
-    font-size: 2rem;
-    letter-spacing: 0.2em;
-    color: #dc2626;
-    margin: 1rem 0;
+    @apply text-[2.8rem] tracking-[0.4em] text-blood-bright my-5;
+    font-family: 'Special Elite', 'American Typewriter', 'Courier New', monospace;
+    text-shadow:
+        var(--shadow-blood),
+        var(--shadow-crimson),
+        3px 3px 10px rgba(0, 0, 0, 0.9);
 }
 
 .home-intro .tagline {
-    color: #525252;
-    letter-spacing: 0.3em;
-    font-size: 0.7rem;
+    @apply text-ash tracking-[0.25em] text-sm uppercase;
 }
 
 .home-intro .divider {
-    width: 8rem;
-    height: 1px;
-    background: linear-gradient(to right, transparent, #7f1d1d, transparent);
-    margin: 1.5rem auto;
+    @apply w-48 h-[2px] mx-auto my-8 relative;
+    background: linear-gradient(to right, transparent, var(--color-blood), var(--color-blood-red), var(--color-blood), transparent);
+    box-shadow: var(--shadow-blood);
 }
 
+.home-intro .divider::before,
+.home-intro .divider::after {
+    @apply content-['☩'] absolute top-1/2 -translate-y-1/2;
+    @apply text-blood text-sm;
+    text-shadow: var(--shadow-blood);
+}
+
+.home-intro .divider::before {
+    @apply -left-6;
+}
+
+.home-intro .divider::after {
+    @apply -right-6;
+}
+
+/* ============================================
+   NAV GRID
+   ============================================ */
+
 .nav-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    max-width: 400px;
-    margin: 2rem auto;
+    @apply grid grid-cols-2 gap-5 max-w-[480px] mx-auto my-10 relative z-10;
 }
 
 .nav-grid a {
-    background: rgba(23, 23, 23, 0.6);
-    border: 1px solid #262626;
-    padding: 1.5rem;
-    text-align: center;
-    text-decoration: none;
-    transition: all 0.3s;
+    @apply p-7 text-center no-underline transition-all duration-400 relative overflow-hidden;
+    @apply border border-blood-darker;
+    background: rgba(51, 0, 0, 0.85);
+}
+
+.nav-grid a::before {
+    @apply content-[''] absolute inset-0 opacity-0 transition-opacity duration-400;
+    background: radial-gradient(circle at center, rgba(204, 0, 0, 0.3) 0%, transparent 70%);
+}
+
+.nav-grid a::after {
+    @apply content-[''] absolute bottom-0 left-0 w-full h-[3px] opacity-0 transition-opacity duration-400;
+    background: linear-gradient(90deg, transparent, var(--color-blood-red), transparent);
+}
+
+.nav-grid a:hover::before,
+.nav-grid a:hover::after {
+    @apply opacity-100;
 }
 
 .nav-grid a:hover {
-    border-color: #7f1d1d;
-    background: rgba(127, 29, 29, 0.1);
+    @apply border-blood-red -translate-y-1;
+    background: rgba(92, 16, 16, 0.9);
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.6),
+        var(--shadow-blood);
 }
 
 .nav-grid .icon {
-    font-size: 1.5rem;
-    color: #b91c1c;
-    margin-bottom: 0.5rem;
+    @apply text-[2.5rem] text-blood-bright mb-3 transition-all duration-400 block;
+    text-shadow: var(--shadow-blood);
+}
+
+.nav-grid a:hover .icon {
+    @apply scale-110;
+    text-shadow: var(--shadow-blood), var(--shadow-crimson);
 }
 
 .nav-grid .label {
-    font-size: 0.65rem;
-    letter-spacing: 0.15em;
-    color: #525252;
+    @apply text-xs tracking-[0.15em] text-ash uppercase transition-all duration-400;
 }
 
-/* Lexicon */
+.nav-grid a:hover .label {
+    @apply text-bone;
+}
+
+.nav-grid a.featured {
+    @apply col-span-2 border-blood-dark;
+    background: rgba(128, 0, 0, 0.25);
+}
+
+.nav-grid a.featured .icon {
+    @apply text-blood-red;
+}
+
+/* ============================================
+   LEXICON
+   ============================================ */
+
 .lexicon-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    background: rgba(23, 23, 23, 0.5);
-    border: 1px solid #262626;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
+    @apply flex items-start gap-4 p-5 mb-3.5 transition-all duration-300;
+    @apply border border-blood-darker;
+    background: rgba(51, 0, 0, 0.8);
+}
+
+.lexicon-item:hover {
+    @apply border-blood-red translate-x-1;
+    background: rgba(92, 16, 16, 0.85);
+    box-shadow: 0 0 20px rgba(128, 0, 0, 0.3);
 }
 
 .lexicon-item .symbol {
-    font-size: 1.5rem;
-    color: #b91c1c;
-    width: 2.5rem;
-    text-align: center;
+    @apply text-[2.2rem] text-blood-bright w-11 flex-shrink-0 text-center transition-all duration-300;
+    text-shadow: var(--shadow-blood);
+}
+
+.lexicon-item:hover .symbol {
+    text-shadow: var(--shadow-blood), var(--shadow-crimson);
 }
 
 .lexicon-item h3 {
-    margin: 0 0 0.25rem 0;
+    @apply m-0 mb-2 tracking-[0.1em] text-base;
+    font-family: 'Special Elite', 'American Typewriter', 'Courier New', monospace;
 }
 
 .lexicon-item p {
-    margin: 0;
+    @apply m-0 leading-[1.7] text-[0.9rem];
 }
 
-/* Footer */
+/* ============================================
+   FOOTER
+   ============================================ */
+
 footer {
-    text-align: center;
-    padding: 2rem 0;
-    border-top: 1px solid #262626;
-    margin-top: 2rem;
+    @apply text-center py-12 px-4 border-t border-blood-darker mt-12 relative z-10;
+    background: linear-gradient(to bottom, transparent, rgba(51, 0, 0, 0.5));
+}
+
+footer::before {
+    @apply content-['⛧'] block text-3xl text-blood-red mb-4;
+    text-shadow: var(--shadow-blood);
 }
 
 footer .motto {
-    color: #404040;
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
+    @apply text-ash text-base tracking-[0.2em];
+    font-family: 'Special Elite', 'American Typewriter', 'Courier New', monospace;
 }
 
 footer .translation {
-    color: #262626;
-    font-size: 0.65rem;
-    margin-top: 0.5rem;
+    @apply text-ash-dark text-xs mt-2.5 tracking-[0.12em] italic;
+}
+
+/* ============================================
+   JUMPSCARE OVERLAY
+   ============================================ */
+
+.jumpscare-overlay {
+    @apply fixed inset-0 flex items-center justify-center opacity-0 pointer-events-none z-[9999];
+    @apply transition-opacity duration-50;
+    background: var(--color-void);
+}
+
+.jumpscare-overlay.active {
+    @apply opacity-100 pointer-events-auto;
+}
+
+.jumpscare-overlay .scare-content {
+    @apply text-[15rem] text-blood-red;
+    text-shadow: var(--shadow-crimson);
+}
+
+/* ============================================
+   AUDIO INDICATOR
+   ============================================ */
+
+.audio-indicator {
+    @apply fixed bottom-5 right-5 z-[1000];
+    @apply px-4 py-3 text-xs text-ash tracking-widest cursor-pointer;
+    @apply transition-all duration-300 flex items-center gap-2;
+    @apply border border-blood-darker;
+    background: rgba(26, 0, 0, 0.95);
+}
+
+.audio-indicator:hover {
+    @apply border-blood-red text-bone;
+}
+
+.audio-indicator .icon {
+    @apply text-base;
+}
+
+.audio-indicator.muted .icon {
+    @apply relative;
+}
+
+.audio-indicator.muted .icon::after {
+    @apply content-[''] absolute w-full h-[2px] bg-blood-red -rotate-45;
+}
+
+/* ============================================
+   WHISPER TEXT
+   ============================================ */
+
+.whisper {
+    @apply fixed pointer-events-none z-[500] opacity-0;
+    @apply text-2xl text-blood-dark;
+    font-family: 'Special Elite', 'American Typewriter', 'Courier New', monospace;
+    text-shadow: 0 0 20px rgba(128, 0, 0, 0.5);
+}
+
+/* ============================================
+   MOBILE & ACCESSIBILITY
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .fog-layer,
+    .fog-haze,
+    .vignette,
+    .blood-glow,
+    .blood-layer,
+    .scanlines,
+    .static-noise {
+        @apply hidden;
+    }
+}
+
+@media (max-width: 768px) {
+    body::before {
+        @apply hidden;
+    }
+
+    .fog-layer,
+    .fog-haze {
+        @apply opacity-30 w-full;
+    }
+
+    .blood-glow {
+        @apply opacity-50;
+    }
+
+    .scanlines {
+        @apply hidden;
+    }
+
+    nav a {
+        @apply px-2.5 py-2 text-[0.6rem] tracking-[0.06em];
+    }
+
+    nav li:not(:last-child)::after {
+        @apply hidden;
+    }
+
+    .nav-grid {
+        @apply grid-cols-1 max-w-[300px];
+    }
+
+    .nav-grid a.featured {
+        @apply col-span-1;
+    }
+
+    .home-intro .big-symbol {
+        @apply text-[5rem];
+    }
+
+    .home-intro h1 {
+        @apply text-[2rem] tracking-[0.25em];
+    }
+
+    header .symbol {
+        @apply text-5xl;
+    }
+
+    header h1 {
+        @apply text-2xl tracking-[0.15em];
+    }
 }
