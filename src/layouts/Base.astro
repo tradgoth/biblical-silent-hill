@@ -56,9 +56,8 @@ const navLinks = [
         </div>
 
         <!-- Audio indicator -->
-        <div class="audio-indicator" id="audio-toggle" transition:persist="audio-toggle">
+        <div class="audio-indicator muted" id="audio-toggle" transition:persist="audio-toggle">
             <span class="icon">♪</span>
-            <span class="label">PLAY</span>
         </div>
 
         <nav transition:persist="nav">
@@ -201,28 +200,19 @@ const navLinks = [
 
                     this.bgMusic.volume = 0.4;
 
-                    // Try immediate play (works if user has interacted before)
-                    this.tryPlayMusic();
+                    // Do NOT autoplay on any interaction
+                    // Music will only play when user clicks the audio toggle button
 
-                    // Listen for first interaction to trigger playback
-                    const startMusic = () => {
-                        this.tryPlayMusic();
-                    };
-
-                    ['click', 'scroll', 'keydown', 'touchstart', 'mousemove'].forEach(event => {
-                        document.addEventListener(event, startMusic, { once: false, passive: true });
-                    });
-
-                    // Try when user returns to tab
+                    // Try when user returns to tab (only if music was already playing)
                     document.addEventListener('visibilitychange', () => {
-                        if (document.visibilityState === 'visible') {
+                        if (document.visibilityState === 'visible' && this.musicStarted && this.audioEnabled) {
                             this.tryPlayMusic();
                         }
                     });
                 }
 
                 tryPlayMusic() {
-                    if (this.musicStarted || !this.bgMusic) return;
+                    if (!this.bgMusic) return;
 
                     const playPromise = this.bgMusic.play();
                     if (playPromise !== undefined) {
@@ -230,9 +220,13 @@ const navLinks = [
                             this.musicStarted = true;
                             this.audioEnabled = true;
                             document.getElementById('audio-toggle')?.classList.remove('muted');
-                            this.updateAudioIndicatorText();
+                            // Add state-changing class for animation
+                            const toggle = document.getElementById('audio-toggle');
+                            toggle?.classList.add('state-changing');
+                            setTimeout(() => toggle?.classList.remove('state-changing'), 500);
                         }).catch(() => {
-                            // Autoplay prevented, will try again on interaction
+                            // Autoplay prevented - user must click button to start music
+                            console.log('Autoplay prevented - click play button to start music');
                         });
                     }
                 }
@@ -241,76 +235,165 @@ const navLinks = [
                 // MOTION ANIMATIONS
                 // ============================================
                 setupMotionAnimations() {
-                    // Blood layer pulsing
+                    // Enhanced blood layer pulsing with more depth
                     const bloodLayer = document.getElementById('blood-layer');
                     if (bloodLayer) {
                         animate(
                             bloodLayer,
                             {
-                                opacity: [1, 0.85, 1],
-                                filter: ['brightness(1)', 'brightness(1.1)', 'brightness(1)']
+                                opacity: [1, 0.82, 0.95, 0.88, 1],
+                                filter: [
+                                    'brightness(1) contrast(1)',
+                                    'brightness(1.08) contrast(1.05)',
+                                    'brightness(0.95) contrast(1.02)',
+                                    'brightness(1.05) contrast(1.03)',
+                                    'brightness(1) contrast(1)'
+                                ]
                             } as any,
-                            { duration: 8, repeat: Infinity, easing: 'ease-in-out' } as any
+                            {
+                                duration: 12,
+                                repeat: Infinity,
+                                easing: 'ease-in-out'
+                            } as any
                         );
                     }
 
-                    // Blood glow flickering
+                    // Enhanced blood glow flickering with irregular pattern
                     const bloodGlow = document.getElementById('blood-glow');
                     if (bloodGlow) {
                         animate(
                             bloodGlow,
-                            { opacity: [0.8, 0.6, 0.9, 0.7, 0.8] } as any,
-                            { duration: 0.6, repeat: Infinity } as any
+                            {
+                                opacity: [0.8, 0.55, 0.9, 0.65, 0.85, 0.7, 0.8],
+                                filter: [
+                                    'blur(0px)',
+                                    'blur(1px)',
+                                    'blur(0px)',
+                                    'blur(2px)',
+                                    'blur(0px)',
+                                    'blur(1px)',
+                                    'blur(0px)'
+                                ]
+                            } as any,
+                            {
+                                duration: 0.8,
+                                repeat: Infinity,
+                                easing: [0.45, 0.05, 0.55, 0.95]  // Custom easing for irregular flicker
+                            } as any
                         );
                     }
 
-                    // Fog drift
+                    // Enhanced fog drift with vertical movement
                     const fogLayer = document.getElementById('fog-layer');
                     if (fogLayer) {
+                        // Horizontal drift
                         animate(
                             fogLayer,
-                            { x: ['0%', '-66.666%'] } as any,
-                            { duration: 120, repeat: Infinity, easing: 'linear' } as any
+                            {
+                                x: ['0%', '-66.666%']
+                            } as any,
+                            {
+                                duration: 180,  // Slower for more ominous effect
+                                repeat: Infinity,
+                                easing: 'linear'
+                            } as any
+                        );
+
+                        // Add subtle vertical oscillation
+                        animate(
+                            fogLayer,
+                            {
+                                y: ['0%', '-2%', '0%', '2%', '0%']
+                            } as any,
+                            {
+                                duration: 40,
+                                repeat: Infinity,
+                                easing: 'ease-in-out'
+                            } as any
                         );
                     }
 
-                    // Fog haze pulse
+                    // Enhanced fog haze with opacity and blur variation
                     const fogHaze = document.getElementById('fog-haze');
                     if (fogHaze) {
                         animate(
                             fogHaze,
-                            { opacity: [0.5, 0.8, 0.5] } as any,
-                            { duration: 15, repeat: Infinity, easing: 'ease-in-out' } as any
+                            {
+                                opacity: [0.5, 0.7, 0.4, 0.8, 0.5],
+                                filter: [
+                                    'blur(0px)',
+                                    'blur(3px)',
+                                    'blur(1px)',
+                                    'blur(4px)',
+                                    'blur(0px)'
+                                ]
+                            } as any,
+                            {
+                                duration: 20,
+                                repeat: Infinity,
+                                easing: 'ease-in-out'
+                            } as any
                         );
                     }
 
-                    // Vignette breathing
+                    // Enhanced vignette breathing with intensity variation
                     const vignette = document.getElementById('vignette');
                     if (vignette) {
                         animate(
                             vignette,
-                            { opacity: [1, 0.85, 1] } as any,
-                            { duration: 6, repeat: Infinity, easing: 'ease-in-out' } as any
+                            {
+                                opacity: [1, 0.8, 0.95, 0.85, 1],
+                                filter: [
+                                    'brightness(1)',
+                                    'brightness(0.95)',
+                                    'brightness(1.02)',
+                                    'brightness(0.98)',
+                                    'brightness(1)'
+                                ]
+                            } as any,
+                            {
+                                duration: 8,
+                                repeat: Infinity,
+                                easing: 'ease-in-out'
+                            } as any
                         );
                     }
 
-                    // Scanlines movement
+                    // Scanlines movement - smoother, slower
                     const scanlines = document.querySelector('.scanlines');
                     if (scanlines) {
                         animate(
                             scanlines,
-                            { y: [0, 4] } as any,
-                            { duration: 10, repeat: Infinity, easing: 'linear' } as any
+                            { y: [0, 8] } as any,
+                            {
+                                duration: 15,  // Slower for less distraction
+                                repeat: Infinity,
+                                easing: 'linear'
+                            } as any
                         );
                     }
 
-                    // Static noise flicker
+                    // Enhanced static noise flicker - more varied
                     const staticNoise = document.getElementById('static-noise');
                     if (staticNoise) {
                         animate(
                             staticNoise,
-                            { opacity: [0.03, 0.06, 0.03] } as any,
-                            { duration: 0.1, repeat: Infinity } as any
+                            {
+                                opacity: [0.03, 0.08, 0.02, 0.06, 0.04, 0.03],
+                                filter: [
+                                    'contrast(1)',
+                                    'contrast(1.5)',
+                                    'contrast(1)',
+                                    'contrast(1.3)',
+                                    'contrast(1.1)',
+                                    'contrast(1)'
+                                ]
+                            } as any,
+                            {
+                                duration: 0.15,
+                                repeat: Infinity,
+                                easing: [0.4, 0, 0.6, 1]  // Sharp, irregular
+                            } as any
                         );
                     }
                 }
@@ -365,12 +448,17 @@ const navLinks = [
                         );
                     }
 
-                    // Parallax scroll for blood layer
+                    // Parallax scroll for blood layer (now works with absolute positioning)
                     const bloodLayerEl = document.getElementById('blood-layer');
                     if (bloodLayerEl) {
                         scroll(
-                            animate(bloodLayerEl, { y: [0, -100] } as any) as any,
-                            { target: document.body } as any
+                            animate(bloodLayerEl, {
+                                y: [0, -50]  // Reduced range for subtler effect with absolute positioning
+                            } as any) as any,
+                            {
+                                target: document.body,
+                                offset: ['start start', 'end end']  // Animate across full scroll range
+                            } as any
                         );
                     }
                 }
@@ -384,7 +472,9 @@ const navLinks = [
 
                     toggle.addEventListener('click', () => {
                         if (!this.audioInitialized) {
+                            // First click: initialize audio AND start music
                             this.initAudio();
+                            this.tryPlayMusic(); // Start music immediately on first click
                         } else {
                             this.toggleAudio();
                         }
@@ -407,6 +497,10 @@ const navLinks = [
                 toggleAudio() {
                     this.audioEnabled = !this.audioEnabled;
                     const toggle = document.getElementById('audio-toggle');
+
+                    // Add state-changing animation class
+                    toggle?.classList.add('state-changing');
+                    setTimeout(() => toggle?.classList.remove('state-changing'), 500);
 
                     if (this.audioEnabled) {
                         toggle?.classList.remove('muted');

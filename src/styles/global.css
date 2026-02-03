@@ -55,13 +55,17 @@
 
 html {
     @apply cursor-default;
+    min-height: 100%;
 }
 
 body {
-    @apply min-h-screen overflow-x-hidden;
+    @apply min-h-screen overflow-x-hidden relative;
     @apply bg-void text-bone;
     @apply font-mono tracking-wide leading-relaxed;
     font-family: 'Share Tech Mono', 'Consolas', 'Courier New', monospace;
+    /* Ensure body is positioned context for absolute children */
+    position: relative;
+    min-height: 100vh;
 }
 
 /* ============================================
@@ -69,7 +73,16 @@ body {
    ============================================ */
 
 .blood-layer {
-    @apply fixed inset-0 pointer-events-none z-0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+    min-height: 100vh;
+    /* Extend to fill entire document height */
+    height: 100%;
     background:
         radial-gradient(ellipse 120% 80% at 50% 120%, var(--color-blood-dark) 0%, transparent 50%),
         radial-gradient(ellipse 80% 60% at 20% 80%, var(--color-maroon) 0%, transparent 40%),
@@ -80,8 +93,16 @@ body {
 }
 
 .blood-glow {
-    @apply fixed bottom-0 left-0 w-full pointer-events-none z-[1];
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    pointer-events: none;
+    z-index: 1;
+    /* Keep at 65% but ensure it's relative to full document */
     height: 65%;
+    min-height: 400px; /* Ensure minimum height for visibility */
     background: linear-gradient(
         to top,
         rgba(153, 0, 0, 0.45) 0%,
@@ -94,8 +115,14 @@ body {
 }
 
 .fog-layer {
-    @apply fixed top-0 left-0 pointer-events-none z-[2] opacity-90;
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0.9;
     width: 300%;
+    min-height: 100vh;
     height: 100%;
     background:
         radial-gradient(ellipse 80% 60% at 10% 20%, rgba(100, 20, 20, 0.4) 0%, transparent 50%),
@@ -130,7 +157,16 @@ body {
 }
 
 .fog-haze {
-    @apply fixed inset-0 pointer-events-none z-[4] opacity-40;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 4;
+    opacity: 0.4;
+    min-height: 100vh;
+    height: 100%;
     background: linear-gradient(
         180deg,
         rgba(80, 15, 15, 0.2) 0%,
@@ -600,27 +636,136 @@ footer .translation {
    ============================================ */
 
 .audio-indicator {
-    @apply fixed bottom-5 right-5 z-[1000];
-    @apply px-4 py-3 text-xs text-ash tracking-widest cursor-pointer;
-    @apply transition-all duration-300 flex items-center gap-2;
-    @apply border border-blood-darker;
-    background: rgba(26, 0, 0, 0.95);
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 1000;
+
+    /* Circular design */
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+
+    /* Centered content */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Enhanced styling */
+    background: radial-gradient(circle at 30% 30%, rgba(77, 0, 0, 0.95), rgba(26, 0, 0, 0.98));
+    border: 2px solid var(--color-blood-darker);
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.8),
+        0 0 20px rgba(153, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Subtle float animation */
+    animation: audio-button-float 3s ease-in-out infinite;
+}
+
+@keyframes audio-button-float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-4px); }
 }
 
 .audio-indicator:hover {
-    @apply border-blood-red text-bone;
+    border-color: var(--color-blood-red);
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.9),
+        0 0 30px rgba(204, 0, 0, 0.5),
+        0 0 40px rgba(153, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px) scale(1.05);
+}
+
+.audio-indicator:active {
+    transform: translateY(0px) scale(0.98);
 }
 
 .audio-indicator .icon {
-    @apply text-base;
+    font-size: 1.5rem;
+    color: var(--color-blood-bright);
+    text-shadow:
+        0 0 8px rgba(153, 0, 0, 0.6),
+        0 0 12px rgba(204, 0, 0, 0.4);
+    transition: all 0.3s ease;
+    line-height: 1;
+}
+
+/* Hide the label text */
+.audio-indicator .label {
+    display: none;
+}
+
+/* Playing state - pulsing glow animation */
+.audio-indicator:not(.muted) {
+    animation: audio-button-float 3s ease-in-out infinite,
+               audio-playing-pulse 2s ease-in-out infinite;
+}
+
+@keyframes audio-playing-pulse {
+    0%, 100% {
+        box-shadow:
+            0 4px 12px rgba(0, 0, 0, 0.8),
+            0 0 20px rgba(153, 0, 0, 0.4),
+            0 0 30px rgba(204, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    50% {
+        box-shadow:
+            0 4px 12px rgba(0, 0, 0, 0.8),
+            0 0 35px rgba(153, 0, 0, 0.7),
+            0 0 50px rgba(204, 0, 0, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+}
+
+/* Muted/paused state */
+.audio-indicator.muted {
+    background: radial-gradient(circle at 30% 30%, rgba(42, 5, 5, 0.8), rgba(10, 0, 0, 0.9));
+    border-color: var(--color-blood-darkest);
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .audio-indicator.muted .icon {
-    @apply relative;
+    color: var(--color-ash-dark);
+    text-shadow: none;
+    opacity: 0.6;
 }
 
+/* Remove the strikethrough effect for muted state - use opacity instead */
 .audio-indicator.muted .icon::after {
-    @apply content-[''] absolute w-full h-[2px] bg-blood-red -rotate-45;
+    display: none;
+}
+
+/* Rotation animation on state change */
+.audio-indicator.state-changing .icon {
+    animation: icon-spin 0.5s ease-out;
+}
+
+@keyframes icon-spin {
+    from { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(0.8); }
+    to { transform: rotate(360deg) scale(1); }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .audio-indicator {
+        width: 44px;
+        height: 44px;
+        bottom: 1rem;
+        right: 1rem;
+    }
+
+    .audio-indicator .icon {
+        font-size: 1.3rem;
+    }
 }
 
 /* ============================================
