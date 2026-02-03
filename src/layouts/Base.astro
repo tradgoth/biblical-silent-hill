@@ -763,19 +763,27 @@ const navLinks = [
                 // JUMPSCARES
                 // ============================================
                 setupJumpscares() {
+                    // Throttled scroll handler for jumpscares
+                    let scrollTimeout: number | null = null;
+
                     document.addEventListener('scroll', () => {
-                        const rand = Math.random();
-                        if (rand < 0.008 && !this.jumpscareTriggered) {
-                            if (rand < 0.002) {
-                                // 25% of triggers are full jumpscares
-                                this.triggerFullJumpscare();
-                                this.jumpscareTriggered = true;
-                                setTimeout(() => { this.jumpscareTriggered = false; }, 30000);
-                            } else {
-                                this.triggerMiniScare();
+                        if (scrollTimeout) return;
+
+                        scrollTimeout = window.setTimeout(() => {
+                            const rand = Math.random();
+                            if (rand < 0.008 && !this.jumpscareTriggered) {
+                                if (rand < 0.002) {
+                                    // 25% of triggers are full jumpscares
+                                    this.triggerFullJumpscare();
+                                    this.jumpscareTriggered = true;
+                                    setTimeout(() => { this.jumpscareTriggered = false; }, 30000);
+                                } else {
+                                    this.triggerMiniScare();
+                                }
                             }
-                        }
-                    });
+                            scrollTimeout = null;
+                        }, 100);
+                    }, { passive: true });
                 }
 
                 triggerMiniScare() {
@@ -829,27 +837,35 @@ const navLinks = [
                 setupScrollEffects() {
                     let lastScroll = 0;
                     let scrollVelocity = 0;
+                    let scrollRaf: number | null = null;
 
+                    // Optimized scroll handler using requestAnimationFrame
                     window.addEventListener('scroll', () => {
-                        const currentScroll = window.scrollY;
-                        scrollVelocity = Math.abs(currentScroll - lastScroll);
-                        lastScroll = currentScroll;
+                        if (scrollRaf) return;
 
-                        if (scrollVelocity > 100) {
-                            this.triggerStaticBurst();
-                        }
+                        scrollRaf = requestAnimationFrame(() => {
+                            const currentScroll = window.scrollY;
+                            scrollVelocity = Math.abs(currentScroll - lastScroll);
+                            lastScroll = currentScroll;
 
-                        if (scrollVelocity > 200 && Math.random() < 0.15 && !this.jumpscareTriggered) {
-                            // 40% chance of full jumpscare, 60% chance of mini
-                            if (Math.random() < 0.4) {
-                                this.triggerFullJumpscare();
-                                this.jumpscareTriggered = true;
-                                setTimeout(() => { this.jumpscareTriggered = false; }, 30000);
-                            } else {
-                                this.triggerMiniScare();
+                            if (scrollVelocity > 100) {
+                                this.triggerStaticBurst();
                             }
-                        }
-                    });
+
+                            if (scrollVelocity > 200 && Math.random() < 0.15 && !this.jumpscareTriggered) {
+                                // 40% chance of full jumpscare, 60% chance of mini
+                                if (Math.random() < 0.4) {
+                                    this.triggerFullJumpscare();
+                                    this.jumpscareTriggered = true;
+                                    setTimeout(() => { this.jumpscareTriggered = false; }, 30000);
+                                } else {
+                                    this.triggerMiniScare();
+                                }
+                            }
+
+                            scrollRaf = null;
+                        });
+                    }, { passive: true });
                 }
 
                 // ============================================
@@ -870,10 +886,18 @@ const navLinks = [
                         }
                     }, 5000);
 
-                    ['mousemove', 'keydown', 'scroll', 'click'].forEach(event => {
-                        document.addEventListener(event, () => {
+                    // Throttled interaction tracking for better performance
+                    let interactionTimeout: number | null = null;
+                    const updateInteraction = () => {
+                        if (interactionTimeout) return;
+                        interactionTimeout = window.setTimeout(() => {
                             this.lastInteraction = Date.now();
-                        });
+                            interactionTimeout = null;
+                        }, 500);
+                    };
+
+                    ['mousemove', 'keydown', 'scroll', 'click'].forEach(event => {
+                        document.addEventListener(event, updateInteraction, { passive: true });
                     });
                 }
 
@@ -904,36 +928,41 @@ const navLinks = [
                 // INTERACTIVE ELEMENTS
                 // ============================================
                 setupInteractiveElements() {
-                    // Hover effects on paragraphs
-                    const paragraphs = document.querySelectorAll('main p, main li');
+                    // Use event delegation for better performance
+                    const main = document.querySelector('main');
+                    if (!main) return;
 
-                    paragraphs.forEach(p => {
-                        p.addEventListener('mouseenter', () => {
+                    // Single mouseover event listener using event delegation
+                    main.addEventListener('mouseover', (e) => {
+                        const target = e.target as HTMLElement;
+
+                        // Check if target is a paragraph or list item
+                        if (target.matches('p, li')) {
                             if (Math.random() < 0.08) {
-                                this.triggerTextCorruption(p as HTMLElement);
+                                this.triggerTextCorruption(target);
                             }
-                        });
-                    });
+                        }
 
-                    // Hover effects on article cards
-                    const cards = document.querySelectorAll('.article-card');
-                    cards.forEach(card => {
-                        card.addEventListener('mouseenter', () => {
-                            if (Math.random() < 0.15) {
-                                this.triggerCardGlitch(card as HTMLElement);
+                        // Check if target is an article card
+                        if (target.matches('.article-card') || target.closest('.article-card')) {
+                            const card = target.matches('.article-card') ? target : target.closest('.article-card') as HTMLElement;
+                            if (card && Math.random() < 0.15) {
+                                this.triggerCardGlitch(card);
                             }
-                        });
-                    });
+                        }
+                    }, { passive: true });
 
-                    // Click effects on headers
-                    const headers = document.querySelectorAll('main h2, main h3');
-                    headers.forEach(h => {
-                        h.addEventListener('click', () => {
+                    // Single click event listener using event delegation
+                    main.addEventListener('click', (e) => {
+                        const target = e.target as HTMLElement;
+
+                        // Check if target is a header
+                        if (target.matches('h2, h3')) {
                             if (Math.random() < 0.25) {
-                                this.triggerHeaderDistortion(h as HTMLElement);
+                                this.triggerHeaderDistortion(target);
                             }
-                        });
-                    });
+                        }
+                    }, { passive: true });
                 }
 
                 triggerTextCorruption(element: HTMLElement) {
@@ -1072,41 +1101,45 @@ const navLinks = [
                 // RANDOM EVENTS
                 // ============================================
                 setupRandomEvents() {
+                    // Consolidated timer for better performance - runs every 4 seconds
+                    let ticks = 0;
+
                     setInterval(() => {
-                        if (Math.random() < 0.08) {
+                        ticks++;
+
+                        // Screen flicker - every 2 ticks (8s)
+                        if (ticks % 2 === 0 && Math.random() < 0.08) {
                             this.screenFlicker();
                         }
-                    }, 8000);
 
-                    setInterval(() => {
-                        if (Math.random() < 0.12) {
+                        // Text distortion - every 3 ticks (12s)
+                        if (ticks % 3 === 0 && Math.random() < 0.12) {
                             this.distortRandomText();
                         }
-                    }, 12000);
 
-                    setInterval(() => {
-                        if (Math.random() < 0.04) {
+                        // Screen invert - every 5 ticks (20s)
+                        if (ticks % 5 === 0 && Math.random() < 0.04) {
                             this.triggerScreenInvert();
                         }
-                    }, 20000);
 
-                    setInterval(() => {
-                        if (Math.random() < 0.06) {
+                        // Split screen - every 6 ticks (24s, close to 25s)
+                        if (ticks % 6 === 0 && Math.random() < 0.06) {
                             this.triggerSplitScreen();
                         }
-                    }, 25000);
 
-                    setInterval(() => {
-                        if (Math.random() < 0.05) {
+                        // Vignette close - every 7 ticks (28s, close to 30s)
+                        if (ticks % 7 === 0 && Math.random() < 0.05) {
                             this.triggerVignetteClose();
                         }
-                    }, 30000);
 
-                    setInterval(() => {
-                        if (Math.random() < 0.03) {
+                        // Blood rain - every 10 ticks (40s)
+                        if (ticks % 10 === 0 && Math.random() < 0.03) {
                             this.triggerBloodRain();
                         }
-                    }, 40000);
+
+                        // Reset ticks counter after LCM to prevent overflow (420 = LCM of 2,3,5,6,7,10)
+                        if (ticks >= 420) ticks = 0;
+                    }, 4000);
                 }
 
                 screenFlicker() {
