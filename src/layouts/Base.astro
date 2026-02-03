@@ -102,7 +102,8 @@ const navLinks = [
         </footer>
 
         <script>
-            import { animate, stagger, inView, scroll } from "motion";
+            // @ts-ignore - Motion library types don't include all CSS properties
+            import { animate, scroll } from "motion";
 
             // ============================================
             // DARK RED BLOOD HORROR ENGINE
@@ -110,6 +111,26 @@ const navLinks = [
             // ============================================
 
             class BloodHorrorEngine {
+                // Audio System Properties
+                audioContext: AudioContext | null;
+                audioEnabled: boolean;
+                audioInitialized: boolean;
+                oscillators: OscillatorNode[];
+                gainNodes: GainNode[];
+                bgMusic: HTMLAudioElement | null;
+                musicStarted: boolean;
+
+                // Horror Effect Properties
+                lastInteraction: number;
+                jumpscareTriggered: boolean;
+                whisperCount: number;
+                maxWhispers: number;
+                whispers: string[];
+                scareSymbols: string[];
+
+                // Accessibility
+                prefersReducedMotion: boolean;
+
                 constructor() {
                     this.audioContext = null;
                     this.audioEnabled = false;
@@ -175,7 +196,7 @@ const navLinks = [
                 // BACKGROUND MUSIC (AUTOPLAY BYPASS)
                 // ============================================
                 setupBackgroundMusic() {
-                    this.bgMusic = document.getElementById('background-music');
+                    this.bgMusic = document.getElementById('background-music') as HTMLAudioElement | null;
                     if (!this.bgMusic) return;
 
                     this.bgMusic.volume = 0.4;
@@ -228,8 +249,8 @@ const navLinks = [
                             {
                                 opacity: [1, 0.85, 1],
                                 filter: ['brightness(1)', 'brightness(1.1)', 'brightness(1)']
-                            },
-                            { duration: 8, repeat: Infinity, easing: 'ease-in-out' }
+                            } as any,
+                            { duration: 8, repeat: Infinity, easing: 'ease-in-out' } as any
                         );
                     }
 
@@ -238,8 +259,8 @@ const navLinks = [
                     if (bloodGlow) {
                         animate(
                             bloodGlow,
-                            { opacity: [0.8, 0.6, 0.9, 0.7, 0.8] },
-                            { duration: 0.6, repeat: Infinity }
+                            { opacity: [0.8, 0.6, 0.9, 0.7, 0.8] } as any,
+                            { duration: 0.6, repeat: Infinity } as any
                         );
                     }
 
@@ -248,8 +269,8 @@ const navLinks = [
                     if (fogLayer) {
                         animate(
                             fogLayer,
-                            { x: ['0%', '-66.666%'] },
-                            { duration: 120, repeat: Infinity, easing: 'linear' }
+                            { x: ['0%', '-66.666%'] } as any,
+                            { duration: 120, repeat: Infinity, easing: 'linear' } as any
                         );
                     }
 
@@ -258,8 +279,8 @@ const navLinks = [
                     if (fogHaze) {
                         animate(
                             fogHaze,
-                            { opacity: [0.5, 0.8, 0.5] },
-                            { duration: 15, repeat: Infinity, easing: 'ease-in-out' }
+                            { opacity: [0.5, 0.8, 0.5] } as any,
+                            { duration: 15, repeat: Infinity, easing: 'ease-in-out' } as any
                         );
                     }
 
@@ -268,8 +289,8 @@ const navLinks = [
                     if (vignette) {
                         animate(
                             vignette,
-                            { opacity: [1, 0.85, 1] },
-                            { duration: 6, repeat: Infinity, easing: 'ease-in-out' }
+                            { opacity: [1, 0.85, 1] } as any,
+                            { duration: 6, repeat: Infinity, easing: 'ease-in-out' } as any
                         );
                     }
 
@@ -278,8 +299,8 @@ const navLinks = [
                     if (scanlines) {
                         animate(
                             scanlines,
-                            { y: [0, 4] },
-                            { duration: 10, repeat: Infinity, easing: 'linear' }
+                            { y: [0, 4] } as any,
+                            { duration: 10, repeat: Infinity, easing: 'linear' } as any
                         );
                     }
 
@@ -288,8 +309,8 @@ const navLinks = [
                     if (staticNoise) {
                         animate(
                             staticNoise,
-                            { opacity: [0.03, 0.06, 0.03] },
-                            { duration: 0.1, repeat: Infinity }
+                            { opacity: [0.03, 0.06, 0.03] } as any,
+                            { duration: 0.1, repeat: Infinity } as any
                         );
                     }
                 }
@@ -299,12 +320,12 @@ const navLinks = [
                     const pageContent = document.querySelector('.page-content');
                     if (pageContent) {
                         if (this.prefersReducedMotion) {
-                            pageContent.style.opacity = '1';
+                            (pageContent as HTMLElement).style.opacity = '1';
                         } else {
                             animate(
                                 pageContent,
-                                { opacity: [0, 1] },
-                                { duration: 0.15, easing: 'ease-out' }
+                                { opacity: [0, 1] } as any,
+                                { duration: 0.15, easing: 'ease-out' } as any
                             );
                         }
                     }
@@ -323,8 +344,8 @@ const navLinks = [
                                     '0 0 30px rgba(153, 0, 0, 0.6), 0 0 50px rgba(204, 0, 0, 0.7)',
                                     '0 0 20px rgba(153, 0, 0, 0.4), 0 0 30px rgba(204, 0, 0, 0.5)'
                                 ]
-                            },
-                            { duration: 4, repeat: Infinity, easing: 'ease-in-out' }
+                            } as any,
+                            { duration: 4, repeat: Infinity, easing: 'ease-in-out' } as any
                         );
                     }
 
@@ -339,8 +360,8 @@ const navLinks = [
                                     '0 0 40px rgba(153, 0, 0, 0.8), 0 0 80px rgba(204, 0, 0, 0.7)',
                                     '0 0 30px rgba(153, 0, 0, 0.6), 0 0 60px rgba(204, 0, 0, 0.5)'
                                 ]
-                            },
-                            { duration: 4, repeat: Infinity, easing: 'ease-in-out' }
+                            } as any,
+                            { duration: 4, repeat: Infinity, easing: 'ease-in-out' } as any
                         );
                     }
 
@@ -348,8 +369,8 @@ const navLinks = [
                     const bloodLayerEl = document.getElementById('blood-layer');
                     if (bloodLayerEl) {
                         scroll(
-                            animate(bloodLayerEl, { y: [0, -100] }),
-                            { target: document.body }
+                            animate(bloodLayerEl, { y: [0, -100] } as any) as any,
+                            { target: document.body } as any
                         );
                     }
                 }
@@ -372,7 +393,7 @@ const navLinks = [
 
                 initAudio() {
                     try {
-                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
                         this.audioInitialized = true;
                         this.audioEnabled = true;
                         document.getElementById('audio-toggle')?.classList.remove('muted');
@@ -540,8 +561,8 @@ const navLinks = [
                                     '3px 0 #cc0000, -3px 0 #990000',
                                     'inherit'
                                 ]
-                            },
-                            { duration: 0.3, easing: 'ease-out' }
+                            } as any,
+                            { duration: 0.3, easing: 'ease-out' } as any
                         );
 
                         setTimeout(triggerGlitch, 5000 + Math.random() * 15000);
@@ -557,8 +578,8 @@ const navLinks = [
                     staticEl.classList.add('active');
                     animate(
                         staticEl,
-                        { opacity: [0.5, 0.03] },
-                        { duration: 0.5, easing: 'ease-out' }
+                        { opacity: [0.5, 0.03] } as any,
+                        { duration: 0.5, easing: 'ease-out' } as any
                     );
                     setTimeout(() => staticEl.classList.remove('active'), 500);
                 }
@@ -578,8 +599,8 @@ const navLinks = [
                                 'invert(1)',
                                 'none'
                             ]
-                        },
-                        { duration: 0.4, easing: 'ease-out' }
+                        } as any,
+                        { duration: 0.4, easing: 'ease-out' } as any
                     );
 
                     this.triggerStaticBurst();
@@ -611,8 +632,8 @@ const navLinks = [
                             {
                                 opacity: [0, 0.4, 0.3, 0],
                                 filter: ['blur(10px)', 'blur(2px)', 'blur(2px)', 'blur(10px)']
-                            },
-                            { duration: 4, easing: 'ease-out' }
+                            } as any,
+                            { duration: 4, easing: 'ease-out' } as any
                         );
 
                         setTimeout(() => whisper.remove(), 4000);
@@ -661,16 +682,16 @@ const navLinks = [
                             x: [-10, 10, -5, 5, 0],
                             y: [5, -5, -10, 5, 0],
                             rotate: [-2, 2, -1, 1, 0]
-                        },
-                        { duration: 0.2, repeat: 2 }
+                        } as any,
+                        { duration: 0.2, repeat: 2 } as any
                     );
 
                     animate(
                         overlay,
                         {
                             background: ['#ffffff', '#cc0000', '#000000']
-                        },
-                        { duration: 0.4, easing: 'ease-out' }
+                        } as any,
+                        { duration: 0.4, easing: 'ease-out' } as any
                     );
 
                     setTimeout(() => {
@@ -739,8 +760,8 @@ const navLinks = [
                         {
                             opacity: [0, 0.4, 0],
                             filter: ['blur(10px)', 'blur(2px)', 'blur(10px)']
-                        },
-                        { duration: 4, easing: 'ease-out' }
+                        } as any,
+                        { duration: 4, easing: 'ease-out' } as any
                     );
 
                     setTimeout(() => whisper.remove(), 4000);
@@ -768,8 +789,8 @@ const navLinks = [
 
                     animate(
                         body,
-                        { filter: ['brightness(1)', 'brightness(0.3)', 'brightness(1.5)', 'brightness(0.5)', 'brightness(1)'] },
-                        { duration: 0.13, easing: 'steps(4)' }
+                        { filter: ['brightness(1)', 'brightness(0.3)', 'brightness(1.5)', 'brightness(0.5)', 'brightness(1)'] } as any,
+                        { duration: 0.13, easing: 'steps(4)' } as any
                     );
                 }
 
@@ -784,14 +805,14 @@ const navLinks = [
                         {
                             color: ['inherit', '#990000', 'inherit'],
                             textShadow: ['none', '0 0 10px rgba(153, 0, 0, 0.6)', 'none']
-                        },
-                        { duration: 2, easing: 'ease-in-out' }
+                        } as any,
+                        { duration: 2, easing: 'ease-in-out' } as any
                     );
                 }
             }
 
             // Single instance of horror engine
-            let horrorEngine = null;
+            let horrorEngine: BloodHorrorEngine | null = null;
 
             // Updates the active navigation link indicator during view transitions
             // Handles Astro's client-side navigation without page refresh
