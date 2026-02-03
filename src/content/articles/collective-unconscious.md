@@ -2,6 +2,8 @@
 title: The Collective Unconscious
 subtitle: Alessa's Power & Jungian Psychology
 symbol: ψ
+description: "Jungian archetypes, the town's spiritual foundation, Pyramid Head as Shadow. How personal trauma bleeds into universal nightmare."
+order: 6
 ---
 
 ## The Town's Pre-Existing Spiritual Foundation

@@ -2,6 +2,8 @@
 title: Lilith
 subtitle: The Dark Feminine
 symbol: ⚸
+description: "Adam's first wife, demon of the night. Maria as Lilith parallel, Dahlia as devouring mother, the shadow feminine across the series."
+order: 4
 ---
 
 ## Lilith in Jewish Mysticism

@@ -2,6 +2,8 @@
 title: New Testament
 subtitle: References
 symbol: ♰
+description: "Direct scripture quotations and Pharisee parallels in the film. Alessa as an inverted Christ figure condemned by hypocritical religious authorities."
+order: 1
 ---
 
 ## 1 Corinthians 6:2-3 (Film)

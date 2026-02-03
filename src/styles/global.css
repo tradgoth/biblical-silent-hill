@@ -27,10 +27,11 @@
     --color-maroon: #6b1515;
     --color-scarlet: #8b1a1a;
 
-    /* Text Colors */
-    --color-bone: #d4c5b0;
-    --color-ash: #8a7a6a;
-    --color-ash-dark: #5a4a3a;
+    /* Text Colors - Brightened for readability */
+    --color-bone: #e5d8c5;
+    --color-bone-bright: #f0e6d6;
+    --color-ash: #9a8a7a;
+    --color-ash-dark: #6a5a4a;
     --color-blood-text: #ff4444;
 
     /* Glows */
@@ -73,44 +74,63 @@ body {
         radial-gradient(ellipse 120% 80% at 50% 120%, var(--color-blood-dark) 0%, transparent 50%),
         radial-gradient(ellipse 80% 60% at 20% 80%, var(--color-maroon) 0%, transparent 40%),
         radial-gradient(ellipse 70% 50% at 80% 90%, var(--color-blood) 0%, transparent 35%),
+        radial-gradient(ellipse 60% 40% at 15% 30%, rgba(102, 0, 0, 0.6) 0%, transparent 45%),
+        radial-gradient(ellipse 75% 55% at 85% 25%, rgba(77, 0, 0, 0.5) 0%, transparent 50%),
         radial-gradient(ellipse at 50% 50%, var(--color-shadow) 0%, var(--color-abyss) 50%, var(--color-void) 100%);
 }
 
 .blood-glow {
     @apply fixed bottom-0 left-0 w-full pointer-events-none z-[1];
-    height: 60%;
+    height: 65%;
     background: linear-gradient(
         to top,
-        rgba(153, 0, 0, 0.4) 0%,
-        rgba(128, 0, 0, 0.25) 20%,
-        rgba(77, 0, 0, 0.15) 40%,
+        rgba(153, 0, 0, 0.45) 0%,
+        rgba(139, 26, 26, 0.3) 15%,
+        rgba(128, 0, 0, 0.25) 25%,
+        rgba(92, 16, 16, 0.18) 40%,
+        rgba(77, 0, 0, 0.12) 55%,
         transparent 100%
     );
 }
 
 .fog-layer {
-    @apply fixed top-0 left-0 pointer-events-none z-[2] opacity-80;
+    @apply fixed top-0 left-0 pointer-events-none z-[2] opacity-90;
     width: 300%;
     height: 100%;
     background:
-        radial-gradient(ellipse 80% 60% at 10% 20%, rgba(100, 20, 20, 0.35) 0%, transparent 50%),
-        radial-gradient(ellipse 70% 50% at 90% 80%, rgba(80, 15, 15, 0.3) 0%, transparent 45%),
-        radial-gradient(ellipse 90% 70% at 50% 50%, rgba(60, 10, 10, 0.25) 0%, transparent 55%);
+        radial-gradient(ellipse 80% 60% at 10% 20%, rgba(100, 20, 20, 0.4) 0%, transparent 50%),
+        radial-gradient(ellipse 70% 50% at 90% 80%, rgba(80, 15, 15, 0.35) 0%, transparent 45%),
+        radial-gradient(ellipse 90% 70% at 50% 50%, rgba(60, 10, 10, 0.3) 0%, transparent 55%),
+        radial-gradient(ellipse 100% 80% at 30% 60%, rgba(90, 18, 18, 0.25) 0%, transparent 60%),
+        radial-gradient(ellipse 85% 65% at 70% 40%, rgba(70, 12, 12, 0.28) 0%, transparent 52%);
 }
 
 .vignette {
     @apply fixed inset-0 pointer-events-none z-[3];
-    background: radial-gradient(ellipse at center,
-        transparent 0%,
-        transparent 20%,
-        rgba(26, 0, 0, 0.5) 40%,
-        rgba(20, 0, 0, 0.75) 60%,
-        rgba(10, 0, 0, 0.9) 80%,
-        rgba(0, 0, 0, 0.98) 100%);
+    background:
+        radial-gradient(ellipse 140% 100% at 50% 50%,
+            transparent 0%,
+            transparent 15%,
+            rgba(26, 0, 0, 0.4) 35%,
+            rgba(20, 0, 0, 0.7) 55%,
+            rgba(15, 0, 0, 0.85) 75%,
+            rgba(10, 0, 0, 0.92) 85%,
+            rgba(0, 0, 0, 0.98) 100%
+        ),
+        radial-gradient(ellipse 110% 120% at 30% 40%,
+            transparent 0%,
+            rgba(51, 0, 0, 0.15) 50%,
+            transparent 100%
+        ),
+        radial-gradient(ellipse 100% 110% at 70% 60%,
+            transparent 0%,
+            rgba(77, 0, 0, 0.12) 50%,
+            transparent 100%
+        );
 }
 
 .fog-haze {
-    @apply fixed inset-0 pointer-events-none z-[4] opacity-60;
+    @apply fixed inset-0 pointer-events-none z-[4] opacity-40;
     background: linear-gradient(
         180deg,
         rgba(80, 15, 15, 0.2) 0%,
@@ -121,7 +141,7 @@ body {
 }
 
 .scanlines {
-    @apply fixed inset-0 pointer-events-none z-[998] opacity-30;
+    @apply fixed inset-0 pointer-events-none z-[998] opacity-15;
     background: repeating-linear-gradient(
         0deg,
         transparent 0px,
@@ -261,6 +281,12 @@ header .subtitle {
     @apply max-w-[680px] mx-auto px-6 relative z-10;
 }
 
+.container.page-content {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 4px;
+    padding: 1.5rem 2rem;
+}
+
 main {
     @apply py-6 relative z-10;
 }
@@ -321,8 +347,16 @@ main hr {
    HOME PAGE
    ============================================ */
 
+.home-content-wrapper {
+    @apply w-full flex flex-col items-center;
+}
+
+.home-description {
+    @apply text-center max-w-[500px] mx-auto mb-8 text-bone;
+}
+
 .home-intro {
-    @apply text-center mb-12 py-6 relative z-10;
+    @apply text-center mb-12 py-6 relative z-10 w-full;
 }
 
 .home-intro .big-symbol {
@@ -430,6 +464,59 @@ main hr {
 
 .nav-grid a.featured .icon {
     @apply text-blood-red;
+}
+
+/* ============================================
+   ARTICLE GRID (Home Page)
+   ============================================ */
+
+.article-grid {
+    @apply flex flex-col gap-4 max-w-[600px] mx-auto my-10 relative z-10;
+}
+
+.article-card {
+    @apply flex items-start gap-5 p-6 no-underline transition-all duration-200;
+    @apply border border-blood-darker;
+    background: rgba(20, 0, 0, 0.85);
+}
+
+.article-card:hover {
+    @apply border-blood-red;
+    background: rgba(51, 0, 0, 0.9);
+    box-shadow: var(--shadow-blood);
+    transform: translateY(-2px);
+}
+
+.article-symbol {
+    @apply text-4xl text-blood-bright flex-shrink-0 w-14 text-center;
+    text-shadow: var(--shadow-blood);
+}
+
+.article-card:hover .article-symbol {
+    text-shadow: var(--shadow-blood), var(--shadow-crimson);
+}
+
+.article-content {
+    @apply flex-1;
+}
+
+.article-title {
+    @apply text-lg text-blood-bright tracking-widest mb-1 uppercase m-0;
+    font-family: 'Special Elite', monospace;
+    text-shadow: var(--shadow-blood);
+}
+
+.article-subtitle {
+    @apply text-xs text-ash tracking-wider mb-2 uppercase m-0;
+}
+
+.article-description {
+    @apply text-sm text-bone leading-relaxed m-0;
+    opacity: 0.85;
+}
+
+.article-card:hover .article-description {
+    opacity: 1;
 }
 
 /* ============================================
@@ -575,11 +662,15 @@ footer .translation {
 
     .fog-layer,
     .fog-haze {
-        @apply opacity-30 w-full;
+        @apply opacity-25 w-full;
     }
 
     .blood-glow {
-        @apply opacity-50;
+        @apply opacity-40;
+    }
+
+    .vignette {
+        @apply opacity-80;
     }
 
     .scanlines {
@@ -616,5 +707,29 @@ footer .translation {
 
     header h1 {
         @apply text-2xl tracking-[0.15em];
+    }
+
+    .article-grid {
+        @apply max-w-full;
+    }
+
+    .article-card {
+        @apply p-4 gap-4;
+    }
+
+    .article-symbol {
+        @apply text-3xl w-10;
+    }
+
+    .article-title {
+        @apply text-base;
+    }
+
+    .article-description {
+        @apply text-xs;
+    }
+
+    .container.page-content {
+        @apply px-4;
     }
 }

@@ -2,6 +2,8 @@
 title: Old Testament
 subtitle: Parallels
 symbol: ☩
+description: "Molech child sacrifice, Cain and Abel, Jacob's Ladder. The Otherworld as a reconstruction of Tophet's burning grounds."
+order: 2
 ---
 
 ## Leviticus 18:21 / 20:2-5 — Molech's Descent into Silent Hill

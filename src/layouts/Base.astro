@@ -1,10 +1,16 @@
 ---
 import "../styles/global.css";
+import { ViewTransitions } from 'astro:transitions';
 
 const { title, subtitle, symbol } = Astro.props;
-const currentPath = Astro.url.pathname.replace(/\/$/, '') + '/';
-
 const base = import.meta.env.BASE_URL;
+
+// Normalize current path for comparison
+let currentPath = Astro.url.pathname;
+// Ensure trailing slash
+if (!currentPath.endsWith('/')) {
+    currentPath += '/';
+}
 
 const navLinks = [
     { href: `${base}/`, label: "HOME" },
@@ -27,29 +33,35 @@ const navLinks = [
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+        <ViewTransitions />
     </head>
     <body>
+        <!-- Background music -->
+        <audio id="background-music" loop preload="auto" transition:persist="bgmusic">
+            <source src={`${base}/fairy.mp3`} type="audio/mpeg">
+        </audio>
+
         <!-- Blood & Horror atmosphere layers -->
-        <div class="blood-layer" aria-hidden="true" id="blood-layer"></div>
-        <div class="blood-glow" aria-hidden="true" id="blood-glow"></div>
-        <div class="fog-layer" aria-hidden="true" id="fog-layer"></div>
-        <div class="fog-haze" aria-hidden="true" id="fog-haze"></div>
-        <div class="vignette" aria-hidden="true" id="vignette"></div>
-        <div class="scanlines" aria-hidden="true"></div>
-        <div class="static-noise" id="static-noise" aria-hidden="true"></div>
+        <div class="blood-layer" aria-hidden="true" id="blood-layer" transition:persist="blood"></div>
+        <div class="blood-glow" aria-hidden="true" id="blood-glow" transition:persist="glow"></div>
+        <div class="fog-layer" aria-hidden="true" id="fog-layer" transition:persist="fog"></div>
+        <div class="fog-haze" aria-hidden="true" id="fog-haze" transition:persist="haze"></div>
+        <div class="vignette" aria-hidden="true" id="vignette" transition:persist="vignette"></div>
+        <div class="scanlines" aria-hidden="true" transition:persist="scanlines"></div>
+        <div class="static-noise" id="static-noise" aria-hidden="true" transition:persist="static"></div>
 
         <!-- Jumpscare overlay -->
-        <div class="jumpscare-overlay" id="jumpscare-overlay">
+        <div class="jumpscare-overlay" id="jumpscare-overlay" transition:persist="jumpscare">
             <div class="scare-content" id="scare-content"></div>
         </div>
 
         <!-- Audio indicator -->
-        <div class="audio-indicator" id="audio-toggle">
+        <div class="audio-indicator" id="audio-toggle" transition:persist="audio-toggle">
             <span class="icon">♪</span>
             <span class="label">SOUND</span>
         </div>
 
-        <nav>
+        <nav transition:persist="nav">
             <ul>
                 {
                     navLinks.map((link) => (
@@ -108,6 +120,9 @@ const navLinks = [
                     this.jumpscareTriggered = false;
                     this.whisperCount = 0;
                     this.maxWhispers = 3;
+                    this.bgMusic = null;
+                    this.musicStarted = false;
+                    this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
                     this.whispers = [
                         "The blood...",
@@ -140,15 +155,64 @@ const navLinks = [
                 }
 
                 init() {
-                    this.setupMotionAnimations();
+                    this.setupBackgroundMusic();
                     this.setupAudioToggle();
-                    this.setupGlitchEffects();
-                    this.setupWhispers();
-                    this.setupJumpscares();
-                    this.setupScrollEffects();
-                    this.setupIdleDetection();
-                    this.setupRandomEvents();
+
+                    if (!this.prefersReducedMotion) {
+                        this.setupMotionAnimations();
+                        this.setupGlitchEffects();
+                        this.setupWhispers();
+                        this.setupJumpscares();
+                        this.setupScrollEffects();
+                        this.setupIdleDetection();
+                        this.setupRandomEvents();
+                    }
+
                     this.setupPageLoad();
+                }
+
+                // ============================================
+                // BACKGROUND MUSIC (AUTOPLAY BYPASS)
+                // ============================================
+                setupBackgroundMusic() {
+                    this.bgMusic = document.getElementById('background-music');
+                    if (!this.bgMusic) return;
+
+                    this.bgMusic.volume = 0.4;
+
+                    // Try immediate play (works if user has interacted before)
+                    this.tryPlayMusic();
+
+                    // Listen for first interaction to trigger playback
+                    const startMusic = () => {
+                        this.tryPlayMusic();
+                    };
+
+                    ['click', 'scroll', 'keydown', 'touchstart', 'mousemove'].forEach(event => {
+                        document.addEventListener(event, startMusic, { once: false, passive: true });
+                    });
+
+                    // Try when user returns to tab
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.visibilityState === 'visible') {
+                            this.tryPlayMusic();
+                        }
+                    });
+                }
+
+                tryPlayMusic() {
+                    if (this.musicStarted || !this.bgMusic) return;
+
+                    const playPromise = this.bgMusic.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            this.musicStarted = true;
+                            this.audioEnabled = true;
+                            document.getElementById('audio-toggle')?.classList.remove('muted');
+                        }).catch(() => {
+                            // Autoplay prevented, will try again on interaction
+                        });
+                    }
                 }
 
                 // ============================================
@@ -230,162 +294,54 @@ const navLinks = [
                 }
 
                 setupPageLoad() {
-                    // Fade in page content
+                    // Simple instant fade - "old web" feel
                     const pageContent = document.querySelector('.page-content');
                     if (pageContent) {
-                        animate(
-                            pageContent,
-                            {
-                                opacity: [0, 1],
-                                filter: ['blur(8px) brightness(0.2)', 'blur(0) brightness(1)'],
-                                scale: [0.98, 1]
-                            },
-                            { duration: 1.5, easing: 'ease-out' }
-                        );
+                        if (this.prefersReducedMotion) {
+                            pageContent.style.opacity = '1';
+                        } else {
+                            animate(
+                                pageContent,
+                                { opacity: [0, 1] },
+                                { duration: 0.15, easing: 'ease-out' }
+                            );
+                        }
                     }
 
-                    // Stagger animate main children
-                    const mainChildren = document.querySelectorAll('main > *');
-                    if (mainChildren.length > 0) {
-                        animate(
-                            mainChildren,
-                            {
-                                opacity: [0, 1],
-                                y: [20, 0],
-                                filter: ['blur(2px)', 'blur(0)']
-                            },
-                            {
-                                duration: 0.6,
-                                delay: stagger(0.05),
-                                easing: 'ease-out'
-                            }
-                        );
-                    }
+                    // Only setup breathing effects if motion is allowed
+                    if (this.prefersReducedMotion) return;
 
-                    // Animate header elements
+                    // Symbol breathing effects (header)
                     const headerSymbol = document.querySelector('header .symbol');
-                    const headerH1 = document.querySelector('header h1');
-                    const headerSubtitle = document.querySelector('header .subtitle');
-
                     if (headerSymbol) {
                         animate(
                             headerSymbol,
-                            { opacity: [0, 1], filter: ['blur(4px)', 'blur(0)'] },
-                            { duration: 1, delay: 0.2, easing: 'ease-out' }
-                        );
-
-                        // Symbol breathing
-                        setTimeout(() => {
-                            animate(
-                                headerSymbol,
-                                {
-                                    textShadow: [
-                                        '0 0 20px rgba(153, 0, 0, 0.4), 0 0 30px rgba(204, 0, 0, 0.5)',
-                                        '0 0 30px rgba(153, 0, 0, 0.6), 0 0 50px rgba(204, 0, 0, 0.7)',
-                                        '0 0 20px rgba(153, 0, 0, 0.4), 0 0 30px rgba(204, 0, 0, 0.5)'
-                                    ]
-                                },
-                                { duration: 4, repeat: Infinity, easing: 'ease-in-out' }
-                            );
-                        }, 1200);
-                    }
-
-                    if (headerH1) {
-                        animate(
-                            headerH1,
-                            { opacity: [0, 1], filter: ['blur(4px)', 'blur(0)'] },
-                            { duration: 1, delay: 0.4, easing: 'ease-out' }
+                            {
+                                textShadow: [
+                                    '0 0 20px rgba(153, 0, 0, 0.4), 0 0 30px rgba(204, 0, 0, 0.5)',
+                                    '0 0 30px rgba(153, 0, 0, 0.6), 0 0 50px rgba(204, 0, 0, 0.7)',
+                                    '0 0 20px rgba(153, 0, 0, 0.4), 0 0 30px rgba(204, 0, 0, 0.5)'
+                                ]
+                            },
+                            { duration: 4, repeat: Infinity, easing: 'ease-in-out' }
                         );
                     }
 
-                    if (headerSubtitle) {
-                        animate(
-                            headerSubtitle,
-                            { opacity: [0, 1], filter: ['blur(4px)', 'blur(0)'] },
-                            { duration: 1, delay: 0.6, easing: 'ease-out' }
-                        );
-                    }
-
-                    // Home intro animations
+                    // Home symbol breathing
                     const bigSymbol = document.querySelector('.home-intro .big-symbol');
-                    const homeH1 = document.querySelector('.home-intro h1');
-                    const tagline = document.querySelector('.home-intro .tagline');
-                    const divider = document.querySelector('.home-intro .divider');
-
                     if (bigSymbol) {
                         animate(
                             bigSymbol,
-                            { opacity: [0, 1] },
-                            { duration: 1.2, easing: 'ease-out' }
-                        );
-
-                        setTimeout(() => {
-                            animate(
-                                bigSymbol,
-                                {
-                                    textShadow: [
-                                        '0 0 30px rgba(153, 0, 0, 0.6), 0 0 60px rgba(204, 0, 0, 0.5)',
-                                        '0 0 40px rgba(153, 0, 0, 0.8), 0 0 80px rgba(204, 0, 0, 0.7)',
-                                        '0 0 30px rgba(153, 0, 0, 0.6), 0 0 60px rgba(204, 0, 0, 0.5)'
-                                    ]
-                                },
-                                { duration: 4, repeat: Infinity, easing: 'ease-in-out' }
-                            );
-                        }, 1200);
-                    }
-
-                    if (homeH1) {
-                        animate(
-                            homeH1,
-                            { opacity: [0, 1] },
-                            { duration: 1.2, delay: 0.3, easing: 'ease-out' }
+                            {
+                                textShadow: [
+                                    '0 0 30px rgba(153, 0, 0, 0.6), 0 0 60px rgba(204, 0, 0, 0.5)',
+                                    '0 0 40px rgba(153, 0, 0, 0.8), 0 0 80px rgba(204, 0, 0, 0.7)',
+                                    '0 0 30px rgba(153, 0, 0, 0.6), 0 0 60px rgba(204, 0, 0, 0.5)'
+                                ]
+                            },
+                            { duration: 4, repeat: Infinity, easing: 'ease-in-out' }
                         );
                     }
-
-                    if (tagline) {
-                        animate(
-                            tagline,
-                            { opacity: [0, 1] },
-                            { duration: 1.2, delay: 0.5, easing: 'ease-out' }
-                        );
-                    }
-
-                    if (divider) {
-                        animate(
-                            divider,
-                            { opacity: [0, 1] },
-                            { duration: 1, delay: 0.7, easing: 'ease-out' }
-                        );
-                    }
-
-                    // Setup scroll-triggered animations
-                    const navGridLinks = document.querySelectorAll('.nav-grid a');
-                    navGridLinks.forEach((link, i) => {
-                        inView(link, () => {
-                            animate(
-                                link,
-                                {
-                                    opacity: [0, 1],
-                                    y: [30, 0]
-                                },
-                                { duration: 0.5, delay: i * 0.1 }
-                            );
-                        }, { amount: 0.3 });
-                    });
-
-                    const lexiconItems = document.querySelectorAll('.lexicon-item');
-                    lexiconItems.forEach((item, i) => {
-                        inView(item, () => {
-                            animate(
-                                item,
-                                {
-                                    opacity: [0, 1],
-                                    x: [-30, 0]
-                                },
-                                { duration: 0.5, delay: i * 0.1 }
-                            );
-                        }, { amount: 0.3 });
-                    });
 
                     // Parallax scroll for blood layer
                     const bloodLayerEl = document.getElementById('blood-layer');
@@ -431,9 +387,16 @@ const navLinks = [
 
                     if (this.audioEnabled) {
                         toggle?.classList.remove('muted');
+                        if (this.bgMusic) {
+                            this.bgMusic.play();
+                            this.musicStarted = true;
+                        }
                         this.startAmbientDrone();
                     } else {
                         toggle?.classList.add('muted');
+                        if (this.bgMusic) {
+                            this.bgMusic.pause();
+                        }
                         this.stopAllAudio();
                     }
                 }
@@ -816,18 +779,30 @@ const navLinks = [
                 }
             }
 
-            // Initialize horror engine when DOM is ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', () => {
-                    new BloodHorrorEngine();
-                });
-            } else {
-                new BloodHorrorEngine();
+            // Single instance of horror engine
+            let horrorEngine = null;
+
+            function initHorrorEngine() {
+                if (!horrorEngine) {
+                    horrorEngine = new BloodHorrorEngine();
+                } else {
+                    // On page swap, just reinitialize page-specific animations
+                    horrorEngine.setupPageLoad();
+                }
             }
 
-            // Also initialize on Astro page navigation
-            document.addEventListener('astro:page-load', () => {
-                new BloodHorrorEngine();
+            // Initialize on first load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initHorrorEngine);
+            } else {
+                initHorrorEngine();
+            }
+
+            // Reinitialize page content on Astro navigation
+            document.addEventListener('astro:after-swap', () => {
+                if (horrorEngine) {
+                    horrorEngine.setupPageLoad();
+                }
             });
         </script>
     </body>

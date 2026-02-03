@@ -2,6 +2,8 @@
 title: Lexicon
 subtitle: Symbol Guide
 symbol: ℇ
+description: "Quick reference guide to religious and occult symbols used throughout this compendium and the Silent Hill series."
+order: 7
 ---
 
 ## ⚸ Black Moon Lilith

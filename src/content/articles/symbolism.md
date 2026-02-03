@@ -2,6 +2,8 @@
 title: Symbolism
 subtitle: Sacred Marks
 symbol: ⌱
+description: "The Seal of Metatron, Marks of Samael and Lilith. Dahlia's deception and the Kabbalistic sacred geometry of protection."
+order: 5
 ---
 
 ## The Seal of Metatron

@@ -6,6 +6,8 @@ const articles = defineCollection({
     title: z.string(),
     subtitle: z.string().optional(),
     symbol: z.string().optional(),
+    description: z.string().optional(),
+    order: z.number().optional(),
   })
 });
 

@@ -2,6 +2,8 @@
 title: Demonology
 subtitle: Lesser Key & Enoch
 symbol: ⛧
+description: "The Lesser Key of Solomon, Solomonic rituals, Flauros artifact, Paimon, and Azazel. The Order's grimoire traditions."
+order: 3
 ---
 
 ## The Lesser Key of Solomon

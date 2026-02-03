@@ -1,7 +1,14 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from "../layouts/Base.astro";
 
 const base = import.meta.env.BASE_URL;
+
+// Get all articles and sort by order
+const articles = await getCollection('articles');
+const sortedArticles = articles
+    .filter(a => a.slug !== 'home')
+    .sort((a, b) => (a.data.order ?? 99) - (b.data.order ?? 99));
 ---
 
 <Base
@@ -9,45 +16,37 @@ const base = import.meta.env.BASE_URL;
 	subtitle="Biblical Themes & Occult References"
 	symbol="☩"
 >
-	<div class="home-intro">
-		<div class="big-symbol glitch-text">☩</div>
-		<h1 class="glitch-text">SILENT HILL</h1>
-		<p class="tagline">BIBLICAL THEMES & OCCULT REFERENCES</p>
-		<div class="divider"></div>
-	</div>
+	<div class="home-content-wrapper">
+		<div class="home-intro">
+			<div class="big-symbol glitch-text">☩</div>
+			<h1 class="glitch-text">SILENT HILL</h1>
+			<p class="tagline">BIBLICAL THEMES & OCCULT REFERENCES</p>
+			<div class="divider"></div>
+		</div>
 
-	<p style="text-align: center; max-width: 500px; margin: 0 auto 2rem;">
-		The Silent Hill franchise weaves together Judeo-Christian scripture,
-		Kabbalistic mysticism, Solomonic demonology, and Gnostic theology to
-		create its uniquely disturbing religious horror. This compendium
-		documents the biblical connections to the Order's syncretic belief
-		system.
-	</p>
+		<p class="home-description">
+			The Silent Hill franchise weaves together Judeo-Christian scripture,
+			Kabbalistic mysticism, Solomonic demonology, and Gnostic theology to
+			create its uniquely disturbing religious horror. This compendium
+			documents the biblical connections to the Order's syncretic belief
+			system.
+		</p>
 
-	<div class="nav-grid">
-		<a href={`${base}/new-testament/`}>
-			<div class="icon">✝</div>
-			<div class="label">NEW TESTAMENT</div>
-		</a>
-		<a href={`${base}/old-testament/`}>
-			<div class="icon">☩</div>
-			<div class="label">OLD TESTAMENT</div>
-		</a>
-		<a href={`${base}/demonology/`}>
-			<div class="icon">⛧</div>
-			<div class="label">DEMONOLOGY</div>
-		</a>
-		<a href={`${base}/symbolism/`}>
-			<div class="icon">◬</div>
-			<div class="label">SYMBOLISM</div>
-		</a>
-		<a href={`${base}/collective-unconscious/`} class="featured">
-			<div class="icon">⚛</div>
-			<div class="label">COLLECTIVE UNCONSCIOUS</div>
-		</a>
-		<a href={`${base}/lilith/`}>
-			<div class="icon">☽</div>
-			<div class="label">LILITH</div>
-		</a>
+		<div class="article-grid">
+		{sortedArticles.map((article) => (
+			<a href={`${base}/${article.slug}/`} class="article-card">
+				<div class="article-symbol">{article.data.symbol || '☩'}</div>
+				<div class="article-content">
+					<h2 class="article-title">{article.data.title}</h2>
+					{article.data.subtitle && (
+						<p class="article-subtitle">{article.data.subtitle}</p>
+					)}
+					{article.data.description && (
+						<p class="article-description">{article.data.description}</p>
+					)}
+				</div>
+			</a>
+		))}
+		</div>
 	</div>
 </Base>
