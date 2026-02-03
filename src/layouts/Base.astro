@@ -186,6 +186,8 @@ const navLinks = [
                         this.setupScrollEffects();
                         this.setupIdleDetection();
                         this.setupRandomEvents();
+                        this.setupInteractiveElements();
+                        this.setupKeyboardEasterEggs();
                     }
 
                     this.setupPageLoad();
@@ -634,6 +636,26 @@ const navLinks = [
                     source.start();
                 }
 
+                playGlitchSound() {
+                    if (!this.audioContext || !this.audioEnabled) return;
+
+                    // Short digital glitch
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(200, this.audioContext.currentTime + 0.1);
+
+                    gain.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
+
+                    osc.connect(gain);
+                    gain.connect(this.audioContext.destination);
+                    osc.start();
+                    osc.stop(this.audioContext.currentTime + 0.15);
+                }
+
                 // ============================================
                 // GLITCH EFFECTS
                 // ============================================
@@ -659,7 +681,7 @@ const navLinks = [
                             { duration: 0.3, easing: 'ease-out' } as any
                         );
 
-                        setTimeout(triggerGlitch, 5000 + Math.random() * 15000);
+                        setTimeout(triggerGlitch, 3000 + Math.random() * 9000);
                     };
 
                     setTimeout(triggerGlitch, 3000);
@@ -731,7 +753,7 @@ const navLinks = [
                         );
 
                         setTimeout(() => whisper.remove(), 4000);
-                        setTimeout(showWhisper, 20000 + Math.random() * 40000);
+                        setTimeout(showWhisper, 15000 + Math.random() * 25000);
                     };
 
                     setTimeout(showWhisper, 15000 + Math.random() * 20000);
@@ -742,8 +764,16 @@ const navLinks = [
                 // ============================================
                 setupJumpscares() {
                     document.addEventListener('scroll', () => {
-                        if (Math.random() < 0.002 && !this.jumpscareTriggered) {
-                            this.triggerMiniScare();
+                        const rand = Math.random();
+                        if (rand < 0.008 && !this.jumpscareTriggered) {
+                            if (rand < 0.002) {
+                                // 25% of triggers are full jumpscares
+                                this.triggerFullJumpscare();
+                                this.jumpscareTriggered = true;
+                                setTimeout(() => { this.jumpscareTriggered = false; }, 30000);
+                            } else {
+                                this.triggerMiniScare();
+                            }
                         }
                     });
                 }
@@ -809,8 +839,15 @@ const navLinks = [
                             this.triggerStaticBurst();
                         }
 
-                        if (scrollVelocity > 200 && Math.random() < 0.1) {
-                            this.triggerMiniScare();
+                        if (scrollVelocity > 200 && Math.random() < 0.15 && !this.jumpscareTriggered) {
+                            // 40% chance of full jumpscare, 60% chance of mini
+                            if (Math.random() < 0.4) {
+                                this.triggerFullJumpscare();
+                                this.jumpscareTriggered = true;
+                                setTimeout(() => { this.jumpscareTriggered = false; }, 30000);
+                            } else {
+                                this.triggerMiniScare();
+                            }
                         }
                     });
                 }
@@ -822,12 +859,14 @@ const navLinks = [
                     setInterval(() => {
                         const idleTime = Date.now() - this.lastInteraction;
 
-                        if (idleTime > 30000 && Math.random() < 0.05) {
+                        if (idleTime > 30000 && Math.random() < 0.15) {
                             this.showIdleWhisper();
                         }
 
-                        if (idleTime > 60000 && Math.random() < 0.02) {
-                            this.triggerMiniScare();
+                        if (idleTime > 60000 && Math.random() < 0.08 && !this.jumpscareTriggered) {
+                            this.triggerFullJumpscare();
+                            this.jumpscareTriggered = true;
+                            setTimeout(() => { this.jumpscareTriggered = false; }, 30000);
                         }
                     }, 5000);
 
@@ -862,20 +901,212 @@ const navLinks = [
                 }
 
                 // ============================================
+                // INTERACTIVE ELEMENTS
+                // ============================================
+                setupInteractiveElements() {
+                    // Hover effects on paragraphs
+                    const paragraphs = document.querySelectorAll('main p, main li');
+
+                    paragraphs.forEach(p => {
+                        p.addEventListener('mouseenter', () => {
+                            if (Math.random() < 0.08) {
+                                this.triggerTextCorruption(p as HTMLElement);
+                            }
+                        });
+                    });
+
+                    // Hover effects on article cards
+                    const cards = document.querySelectorAll('.article-card');
+                    cards.forEach(card => {
+                        card.addEventListener('mouseenter', () => {
+                            if (Math.random() < 0.15) {
+                                this.triggerCardGlitch(card as HTMLElement);
+                            }
+                        });
+                    });
+
+                    // Click effects on headers
+                    const headers = document.querySelectorAll('main h2, main h3');
+                    headers.forEach(h => {
+                        h.addEventListener('click', () => {
+                            if (Math.random() < 0.25) {
+                                this.triggerHeaderDistortion(h as HTMLElement);
+                            }
+                        });
+                    });
+                }
+
+                triggerTextCorruption(element: HTMLElement) {
+                    const originalText = element.textContent || '';
+                    const glitchChars = ['█', '▓', '▒', '░', '☠', '†', '☩', '⛧'];
+
+                    // Randomly corrupt some characters
+                    let corruptedText = originalText.split('').map(char => {
+                        return Math.random() < 0.15 ? glitchChars[Math.floor(Math.random() * glitchChars.length)] : char;
+                    }).join('');
+
+                    element.textContent = corruptedText;
+                    this.playWhisperSound();
+
+                    animate(
+                        element,
+                        {
+                            color: ['inherit', '#cc0000', '#990000', 'inherit'],
+                            textShadow: ['none', '0 0 10px rgba(204, 0, 0, 0.8)', '0 0 15px rgba(153, 0, 0, 0.6)', 'none']
+                        } as any,
+                        { duration: 0.8, easing: 'ease-in-out' } as any
+                    );
+
+                    // Restore original text
+                    setTimeout(() => {
+                        element.textContent = originalText;
+                    }, 800);
+                }
+
+                triggerCardGlitch(card: HTMLElement) {
+                    animate(
+                        card,
+                        {
+                            x: [-3, 3, -2, 2, 0],
+                            y: [2, -2, 1, -1, 0],
+                            rotate: [-1, 1, -0.5, 0.5, 0],
+                            filter: [
+                                'brightness(1)',
+                                'brightness(0.7) saturate(2)',
+                                'brightness(1.3) hue-rotate(15deg)',
+                                'brightness(0.9)',
+                                'brightness(1)'
+                            ]
+                        } as any,
+                        { duration: 0.4, easing: 'ease-out' } as any
+                    );
+
+                    this.playGlitchSound();
+                }
+
+                triggerHeaderDistortion(header: HTMLElement) {
+                    animate(
+                        header,
+                        {
+                            scaleX: [1, 0.98, 1.03, 0.99, 1],
+                            scaleY: [1, 1.02, 0.97, 1.01, 1],
+                            x: [-5, 5, -3, 3, 0],
+                            textShadow: [
+                                'inherit',
+                                '5px 0 #cc0000, -5px 0 #990000',
+                                '0 5px #cc0000, 0 -5px #990000',
+                                '3px 3px #cc0000, -3px -3px #990000',
+                                'inherit'
+                            ]
+                        } as any,
+                        { duration: 0.5, easing: [0.4, 0, 0.2, 1] } as any
+                    );
+
+                    this.triggerStaticBurst();
+                }
+
+                // ============================================
+                // KEYBOARD EASTER EGGS
+                // ============================================
+                setupKeyboardEasterEggs() {
+                    const keySequence: string[] = [];
+                    const maxSequenceLength = 10;
+
+                    document.addEventListener('keydown', (e) => {
+                        keySequence.push(e.key.toLowerCase());
+                        if (keySequence.length > maxSequenceLength) {
+                            keySequence.shift();
+                        }
+
+                        // "pyramid" - Trigger full jumpscare
+                        if (keySequence.slice(-7).join('') === 'pyramid') {
+                            if (!this.jumpscareTriggered) {
+                                this.triggerFullJumpscare();
+                                this.jumpscareTriggered = true;
+                                setTimeout(() => { this.jumpscareTriggered = false; }, 30000);
+                            }
+                            keySequence.length = 0;
+                        }
+
+                        // "maria" - Summon multiple whispers
+                        if (keySequence.slice(-5).join('') === 'maria') {
+                            for (let i = 0; i < 5; i++) {
+                                setTimeout(() => this.showIdleWhisper(), i * 300);
+                            }
+                            keySequence.length = 0;
+                        }
+
+                        // "666" - Heavy glitch storm
+                        if (keySequence.slice(-3).join('') === '666') {
+                            for (let i = 0; i < 3; i++) {
+                                setTimeout(() => this.triggerHeavyGlitch(), i * 200);
+                            }
+                            keySequence.length = 0;
+                        }
+
+                        // "blood" - Red screen pulse
+                        if (keySequence.slice(-5).join('') === 'blood') {
+                            this.triggerBloodPulse();
+                            keySequence.length = 0;
+                        }
+                    });
+                }
+
+                triggerBloodPulse() {
+                    const bloodGlow = document.getElementById('blood-glow');
+                    if (!bloodGlow) return;
+
+                    animate(
+                        bloodGlow,
+                        {
+                            opacity: [0.8, 1, 0.95, 1, 0.8],
+                            filter: ['brightness(1)', 'brightness(2) saturate(2)', 'brightness(1.5)', 'brightness(2)', 'brightness(1)']
+                        } as any,
+                        { duration: 2, easing: 'ease-in-out' } as any
+                    );
+
+                    this.playJumpscareSound();
+                }
+
+                // ============================================
                 // RANDOM EVENTS
                 // ============================================
                 setupRandomEvents() {
                     setInterval(() => {
-                        if (Math.random() < 0.03) {
+                        if (Math.random() < 0.08) {
                             this.screenFlicker();
                         }
-                    }, 10000);
+                    }, 8000);
+
+                    setInterval(() => {
+                        if (Math.random() < 0.12) {
+                            this.distortRandomText();
+                        }
+                    }, 12000);
+
+                    setInterval(() => {
+                        if (Math.random() < 0.04) {
+                            this.triggerScreenInvert();
+                        }
+                    }, 20000);
+
+                    setInterval(() => {
+                        if (Math.random() < 0.06) {
+                            this.triggerSplitScreen();
+                        }
+                    }, 25000);
 
                     setInterval(() => {
                         if (Math.random() < 0.05) {
-                            this.distortRandomText();
+                            this.triggerVignetteClose();
                         }
-                    }, 15000);
+                    }, 30000);
+
+                    setInterval(() => {
+                        if (Math.random() < 0.03) {
+                            this.triggerBloodRain();
+                        }
+                    }, 40000);
                 }
 
                 screenFlicker() {
@@ -888,20 +1119,151 @@ const navLinks = [
                     );
                 }
 
+                triggerScreenInvert() {
+                    const body = document.body;
+
+                    animate(
+                        body,
+                        {
+                            filter: [
+                                'invert(0)',
+                                'invert(1)',
+                                'invert(1)',
+                                'invert(0)'
+                            ]
+                        } as any,
+                        { duration: 0.3, easing: 'steps(3)' } as any
+                    );
+                }
+
+                triggerSplitScreen() {
+                    const body = document.body;
+
+                    animate(
+                        body,
+                        {
+                            x: [0, -20, 20, -10, 10, 0],
+                            filter: [
+                                'none',
+                                'hue-rotate(180deg)',
+                                'saturate(3)',
+                                'contrast(2)',
+                                'brightness(0.5)',
+                                'none'
+                            ]
+                        } as any,
+                        { duration: 0.5, easing: 'ease-out' } as any
+                    );
+
+                    this.triggerStaticBurst();
+                }
+
+                triggerVignetteClose() {
+                    const vignette = document.getElementById('vignette');
+                    if (!vignette) return;
+
+                    animate(
+                        vignette,
+                        {
+                            opacity: [1, 1.5, 1.3, 1],
+                            filter: [
+                                'brightness(1)',
+                                'brightness(0.3)',
+                                'brightness(0.5)',
+                                'brightness(1)'
+                            ]
+                        } as any,
+                        { duration: 2, easing: 'ease-in-out' } as any
+                    );
+                }
+
+                triggerBloodRain() {
+                    const bloodGlow = document.getElementById('blood-glow');
+                    if (!bloodGlow) return;
+
+                    animate(
+                        bloodGlow,
+                        {
+                            opacity: [0.8, 1.2, 0.9, 1.1, 0.8],
+                            y: [0, -20, -10, -15, 0],
+                            filter: [
+                                'brightness(1) blur(0px)',
+                                'brightness(2) blur(5px)',
+                                'brightness(1.5) blur(2px)',
+                                'brightness(1.8) blur(3px)',
+                                'brightness(1) blur(0px)'
+                            ]
+                        } as any,
+                        { duration: 3, easing: 'ease-in-out' } as any
+                    );
+                }
+
                 distortRandomText() {
                     const paragraphs = document.querySelectorAll('main p');
                     if (paragraphs.length === 0) return;
 
                     const p = paragraphs[Math.floor(Math.random() * paragraphs.length)];
 
-                    animate(
-                        p,
-                        {
-                            color: ['inherit', '#990000', 'inherit'],
-                            textShadow: ['none', '0 0 10px rgba(153, 0, 0, 0.6)', 'none']
-                        } as any,
-                        { duration: 2, easing: 'ease-in-out' } as any
-                    );
+                    // Choose random effect type
+                    const effectType = Math.floor(Math.random() * 4);
+
+                    switch(effectType) {
+                        case 0: // Color shift
+                            animate(
+                                p,
+                                {
+                                    color: ['inherit', '#990000', 'inherit'],
+                                    textShadow: ['none', '0 0 10px rgba(153, 0, 0, 0.6)', 'none']
+                                } as any,
+                                { duration: 2, easing: 'ease-in-out' } as any
+                            );
+                            break;
+
+                        case 1: // Rotation + skew
+                            animate(
+                                p,
+                                {
+                                    rotate: [0, 2, -2, 1, 0],
+                                    skewX: [0, -3, 3, 0],
+                                    textShadow: ['none', '2px 2px 8px rgba(153, 0, 0, 0.8)', 'none']
+                                } as any,
+                                { duration: 1.5, easing: 'ease-in-out' } as any
+                            );
+                            break;
+
+                        case 2: // Scale + blur
+                            animate(
+                                p,
+                                {
+                                    scale: [1, 1.03, 0.97, 1],
+                                    filter: ['blur(0px)', 'blur(2px)', 'blur(1px)', 'blur(0px)'],
+                                    color: ['inherit', '#cc0000', '#990000', 'inherit']
+                                } as any,
+                                { duration: 1.8, easing: 'ease-in-out' } as any
+                            );
+                            break;
+
+                        case 3: // Letter spacing glitch
+                            animate(
+                                p,
+                                {
+                                    letterSpacing: ['normal', '0.3em', '-0.05em', '0.1em', 'normal'],
+                                    color: ['inherit', '#ff0000', '#990000', 'inherit'],
+                                    textShadow: [
+                                        'none',
+                                        '3px 0 #cc0000, -3px 0 #990000',
+                                        '0 3px #cc0000, 0 -3px #990000',
+                                        'none'
+                                    ]
+                                } as any,
+                                { duration: 1.2, easing: [0.4, 0, 0.6, 1] } as any
+                            );
+                            break;
+                    }
+
+                    if (Math.random() < 0.3) {
+                        this.playGlitchSound();
+                    }
                 }
             }
 

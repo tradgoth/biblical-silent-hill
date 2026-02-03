@@ -12,7 +12,7 @@ The 2006 Silent Hill film features a billboard with explicit scripture—the mos
 
 > "Do you not know that the saints will judge the world? And if the world will be judged by you, are you unworthy to judge the smallest matters? Do you not know that we shall judge angels?"
 
-The Apostle Paul rebukes members of the early church in Corinth for taking disputes to secular courts rather than resolving them within the Christian community. He argues that if believers are destined for such high cosmic authority in the future, they should certainly be capable of handling minor earthly disagreements.
+ ♰ The 2006 Silent Hill film features a billboard with explicit scriptureThis is the most direct New Testament quotation in any Silent Hill media. In these verses, the Apostle Paul rebukes members of the early church in Corinth for taking their disputes to secular courts rather than resolving them within the Christian community. He argues that if believers are destined for such high cosmic authority in the future, they should certainly be capable of handling minor earthly disagreements. Paul's message emphasizes the responsibility and authority of the faithful, contrasting their future role in divine judgment with their current behavior.
 
 **Alessa is judged by the Order in a similar manner—condemned by those who claim divine authority yet act as hypocrites.**
 
